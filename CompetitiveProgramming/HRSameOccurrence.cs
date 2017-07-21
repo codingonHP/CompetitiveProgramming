@@ -549,9 +549,9 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
 
                     long xCount = 0, yCount = 0;
 
-                    for (var i = currbreakPoint; i < breakpoints.Count; i++)
+                    for (var i = index; i < breakpoints.Count; i++)
                     {
-                        var bindex = breakpoints[(int)i];
+                        var bindex = breakpoints[i];
                         if (bindex < Array.Length && Array[bindex] == x)
                         {
                             ++xCount;
@@ -566,8 +566,8 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
                             long nextLen = 0;
                             if (i != breakpoints.Count - 1)
                             {
-                                var nextbreakpoint = breakpoints[(int)i + 1];
-                                nextLen = nextbreakpoint - currbreakPoint - 1;
+                                var nextbreakpoint = breakpoints[i + 1];
+                                nextLen = nextbreakpoint - breakpoints[i] - 1;
                             }
 
                             count += prevlen;
@@ -576,7 +576,6 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
                             ++count;
                         }
                     }
-
                 }
 
                 return count;
