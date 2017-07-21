@@ -485,7 +485,7 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
 
                 if (x == y || !_dictionary.ContainsKey(x) && !_dictionary.ContainsKey(y))
                 {
-                    return n * (n + 1) / 2;
+                    return n * (n + 1) / 2; 
                 }
 
                 if (_dictionary.ContainsKey(x) && !_dictionary.ContainsKey(y))
@@ -499,14 +499,15 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
 
                 if (breakPointKey != -1)
                 {
-
+                    var breakpoints = _dictionary[breakPointKey];
+                    return GetCount(breakpoints, x, y);
                 }
 
                 return -1;
 
             }
 
-            public long GetCount(List<long> breakpoints, int x, int y)
+            public long GetCount(List<long> breakpoints, long x, long y)
             {
                 long count = 0;
                 var breakPoints = breakpoints;
@@ -538,7 +539,7 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
                     }
                 }
 
-                len = n - breakPoint - 1;
+                len = _count - breakPoint - 1;
                 count += len * (len + 1) / 2;
 
                 return count;
