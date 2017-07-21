@@ -505,7 +505,17 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
                     return GetCount(breakpoints, x, y);
                 }
 
-                return -1;
+                var xbp = _dictionary[x];
+                var ybp = _dictionary[y];
+
+                foreach (var e in ybp)
+                {
+                    xbp.Add(e);
+                }
+
+                xbp = xbp.OrderBy(e => e).ToList();
+
+                return GetCount(xbp, x, y);
 
             }
 
@@ -514,35 +524,34 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
                 breakpoints.Add(_count);
 
                 long count = 0;
-                long currbreakPoint = 0;
                 long prevBreakPoint = 0;
-                long len;
 
                 for (var index = 0; index < breakpoints.Count; index++)
                 {
-                    currbreakPoint = breakpoints[index];
+                    var currbreakPoint = breakpoints[index];
 
                     if (index > 0)
                     {
                         prevBreakPoint = breakpoints[index - 1];
                     }
 
+                    long prevlen;
                     if (prevBreakPoint == 0)
                     {
-                        len = currbreakPoint;
+                        prevlen = currbreakPoint;
                     }
                     else
                     {
-                        len = currbreakPoint - prevBreakPoint - 1;
+                        prevlen = currbreakPoint - prevBreakPoint - 1;
                     }
 
-                    count += len * (len + 1) / 2;
+                    count += prevlen * (prevlen + 1) / 2;
 
-                    long nextbreakpoint = -1;
-
+                    long nextLen = 0;
                     if (index != breakpoints.Count - 1)
                     {
-                        nextbreakpoint = breakpoints[index + 1];
+                        var nextbreakpoint = breakpoints[index + 1];
+                        nextLen = nextbreakpoint - currbreakPoint - 1;
                     }
 
                     long xCount = 0, yCount = 0;
@@ -551,7 +560,18 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
                     {
                         if (Array[i] == x)
                         {
-                            
+                            ++xCount;
+                        }
+                        else
+                        {
+                            ++yCount;
+                        }
+
+                        if (xCount == yCount)
+                        {
+                            count += prevlen;
+                            count += nextLen;
+                            count += prevlen * nextLen;
                         }
                     }
 
