@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{085455B0-B495-4A8B-B0F1-2CE5D6FA4B4D}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>CompetitiveProgramming</RootNamespace>
+    <AssemblyName>CompetitiveProgramming</AssemblyName>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\DEBUG\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="8Queen.cs" />
+    <Compile Include="AliceAndBobTurns.cs" />
+    <Compile Include="Anagram.cs" />
+    <Compile Include="BaseSolver.cs" />
+    <Compile Include="BigFactorial.cs" />
+    <Compile Include="BracketMatcher.cs" />
+    <Compile Include="BytelandianGoldCoins.cs" />
+    <Compile Include="CALC.cs" />
+    <Compile Include="Cap01.cs" />
+    <Compile Include="ChefRout.cs" />
+    <Compile Include="CHEFSIGN.cs" />
+    <Compile Include="ChefSuba.cs" />
+    <Compile Include="COMPCLUB.cs" />
+    <Compile Include="Crush.cs" />
+    <Compile Include="DayInTram.cs" />
+    <Compile Include="DynamicArray.cs" />
+    <Compile Include="G1.cs" />
+    <Compile Include="GridMover.cs" />
+    <Compile Include="Hangman.cs" />
+    <Compile Include="Heap.cs" />
+    <Compile Include="HHMGN.cs" />
+    <Compile Include="HourGlass.cs" />
+    <Compile Include="HRMaxGCDAndSum.cs" />
+    <Compile Include="HRSameOccurrence.cs" />
+    <Compile Include="InfixToPostfix.cs" />
+    <Compile Include="IPCTRAIN.cs" />
+    <Compile Include="KCHAR.cs" />
+    <Compile Include="LeftRotation.cs" />
+    <Compile Include="LittleElephantAndArray.cs" />
+    <Compile Include="MaxSubArray.cs" />
+    <Compile Include="NextPalindrome.cs" />
+    <Compile Include="NITIKA.cs" />
+    <Compile Include="NoPalindromeAndLessC.cs" />
+    <Compile Include="PCAKE.cs" />
+    <Compile Include="PRATABHI.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PSHTTR.cs" />
+    <Compile Include="Reflection.cs" />
+    <Compile Include="RIDDLE99.cs" />
+    <Compile Include="Solution.cs" />
+    <Compile Include="Sort.cs" />
+    <Compile Include="StringMadeOf.cs" />
+    <Compile Include="StringMatchingBruteForce.cs" />
+    <Compile Include="SubString.cs" />
+    <Compile Include="Template.cs" />
+    <Compile Include="TreeUnsolved.cs" />
+    <Compile Include="TWOCOINS.cs" />
+    <Compile Include="Unicors.cs" />
+    <Compile Include="UniqueStringWithNoPalindrom.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="input.txt" />
+    <Content Include="output.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
