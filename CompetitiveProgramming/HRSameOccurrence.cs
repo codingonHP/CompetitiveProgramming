@@ -524,7 +524,7 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
                 breakpoints.Add(_count);
 
                 long count = 0;
-                long prevBreakPoint = 0;
+                long prevBreakPoint = -1;
 
                 for (var index = 0; index < breakpoints.Count; index++)
                 {
@@ -536,7 +536,7 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
                     }
 
                     long prevlen;
-                    if (prevBreakPoint == 0)
+                    if (prevBreakPoint == -1)
                     {
                         prevlen = currbreakPoint;
                     }
@@ -547,31 +547,33 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
 
                     count += prevlen * (prevlen + 1) / 2;
 
-                    long nextLen = 0;
-                    if (index != breakpoints.Count - 1)
-                    {
-                        var nextbreakpoint = breakpoints[index + 1];
-                        nextLen = nextbreakpoint - currbreakPoint - 1;
-                    }
-
                     long xCount = 0, yCount = 0;
 
                     for (var i = currbreakPoint; i < breakpoints.Count; i++)
                     {
-                        if (Array[i] == x)
+                        var bindex = breakpoints[(int)i];
+                        if (bindex < Array.Length && Array[bindex] == x)
                         {
                             ++xCount;
                         }
-                        else
+                        else if (bindex < Array.Length && Array[bindex] == y)
                         {
                             ++yCount;
                         }
 
                         if (xCount == yCount)
                         {
+                            long nextLen = 0;
+                            if (i != breakpoints.Count - 1)
+                            {
+                                var nextbreakpoint = breakpoints[(int)i + 1];
+                                nextLen = nextbreakpoint - currbreakPoint - 1;
+                            }
+
                             count += prevlen;
                             count += nextLen;
                             count += prevlen * nextLen;
+                            ++count;
                         }
                     }
 
