@@ -456,11 +456,13 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
 
         public class SolveDc
         {
+            public int[] Array { get; }
             readonly Dictionary<long, List<long>> _dictionary = new Dictionary<long, List<long>>();
             private readonly long _count;
 
             public SolveDc(int[] array)
             {
+                Array = array;
                 _count = array.Length;
 
                 for (var index = 0; index < array.Length; index++)
@@ -485,7 +487,7 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
 
                 if (x == y || !_dictionary.ContainsKey(x) && !_dictionary.ContainsKey(y))
                 {
-                    return n * (n + 1) / 2; 
+                    return n * (n + 1) / 2;
                 }
 
                 if (_dictionary.ContainsKey(x) && !_dictionary.ContainsKey(y))
@@ -509,38 +511,51 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
 
             public long GetCount(List<long> breakpoints, long x, long y)
             {
+                breakpoints.Add(_count);
+
                 long count = 0;
-                var breakPoints = breakpoints;
-                long breakPoint = 0;
+                long currbreakPoint = 0;
                 long prevBreakPoint = 0;
                 long len;
 
-                for (var index = 0; index < breakPoints.Count; index++)
+                for (var index = 0; index < breakpoints.Count; index++)
                 {
-                    breakPoint = breakPoints[index];
+                    currbreakPoint = breakpoints[index];
 
-                    if (breakPoint > 0)
+                    if (index > 0)
                     {
-                        if (index > 0)
-                        {
-                            prevBreakPoint = breakPoints[index - 1];
-                        }
-
-                        if (prevBreakPoint == 0)
-                        {
-                            len = breakPoint;
-                        }
-                        else
-                        {
-                            len = breakPoint - prevBreakPoint - 1;
-                        }
-
-                        count += len * (len + 1) / 2;
+                        prevBreakPoint = breakpoints[index - 1];
                     }
-                }
 
-                len = _count - breakPoint - 1;
-                count += len * (len + 1) / 2;
+                    if (prevBreakPoint == 0)
+                    {
+                        len = currbreakPoint;
+                    }
+                    else
+                    {
+                        len = currbreakPoint - prevBreakPoint - 1;
+                    }
+
+                    count += len * (len + 1) / 2;
+
+                    long nextbreakpoint = -1;
+
+                    if (index != breakpoints.Count - 1)
+                    {
+                        nextbreakpoint = breakpoints[index + 1];
+                    }
+
+                    long xCount = 0, yCount = 0;
+
+                    for (var i = currbreakPoint; i < breakpoints.Count; i++)
+                    {
+                        if (Array[i] == x)
+                        {
+                            
+                        }
+                    }
+
+                }
 
                 return count;
             }
