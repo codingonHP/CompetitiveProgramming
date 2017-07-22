@@ -1,6 +1,4 @@
-48
-153
-153
+26
 
 
-Total run time: 0.271s at 7/21/2017 3:58:00 PM
+Total run time: 0.022s at 7/23/2017 2:45:00 AM

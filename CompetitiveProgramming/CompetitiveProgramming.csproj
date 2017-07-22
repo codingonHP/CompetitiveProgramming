@@ -76,6 +76,7 @@
     <Compile Include="InfixToPostfix.cs" />
     <Compile Include="IPCTRAIN.cs" />
     <Compile Include="KCHAR.cs" />
+    <Compile Include="LCA.cs" />
     <Compile Include="LeftRotation.cs" />
     <Compile Include="LittleElephantAndArray.cs" />
     <Compile Include="MaxSubArray.cs" />

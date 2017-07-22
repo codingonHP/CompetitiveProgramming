@@ -60,6 +60,7 @@
     <Compile Include="HRSameOccuranceTest.cs" />
     <Compile Include="IPCTRAINTest.cs" />
     <Compile Include="KCHARTEST.cs" />
+    <Compile Include="LcaUnitTest.cs" />
     <Compile Include="MaxSubArrayTest.cs" />
     <Compile Include="MergeSort.cs" />
     <Compile Include="PCAKETest.cs" />
