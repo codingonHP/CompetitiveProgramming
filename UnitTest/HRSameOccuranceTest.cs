@@ -25,10 +25,10 @@ namespace UnitTestHRSameOccuranceTest
             ShowAll = false,
             OnlyFailed = true,
             OnlyPassed = false,
-            IterationCount = 10,
+            IterationCount = 50,
             SubIterationCount = 1,
-            MinRandom = 1,
-            MaxRandom = 5
+            MinRandom = 1000000,
+            MaxRandom = 1000000000
         };
 
         private int _totalTestCase;
@@ -48,11 +48,11 @@ namespace UnitTestHRSameOccuranceTest
 
             for (int k = 0; k < _settings.IterationCount; ++k)
             {
-                int n = random.Next(1, 20);
+                int n = random.Next(1, 1000);
 
                 for (int i = 0; i < _settings.SubIterationCount; i++)
                 {
-                    int[] array = new int[n];
+                    var array = new long[n];
 
                     try
                     {
@@ -62,35 +62,69 @@ namespace UnitTestHRSameOccuranceTest
                             array[j] = next;
                         }
 
-                        long x = random.Next(_settings.MinRandom, _settings.MaxRandom);
-                        long y = random.Next(_settings.MinRandom, _settings.MaxRandom);
+                        HRSameOccurrence.SolveDc solveDc = new HRSameOccurrence.SolveDc(array, true);
 
-                        ++_totalTestCase;
-
-                        //HRSameOccurrence.DTree dtree = new HRSameOccurrence.DTree(array);
-                        //dtree.Print();
-
-                        HRSameOccurrence.SolveDc solveDc = new HRSameOccurrence.SolveDc(array);
-
-                        //TEST CASE RUN
-                        //var got = HRSameOccurrence.Solve2(dtree, x, y, array.Length);
-                        //var got = 1;
-
-                        var got = HRSameOccurrence.SolveUsingDc(solveDc, x, y);
-
-                        var expected = HRSameOccurrence.SolveBf(array, x, y);
-
-                        try
+                        for (int j = 0; j < 100; j++)
                         {
-                            Assert.AreEqual(expected, got);
-                            ++_passed;
+                            long x = random.Next(_settings.MinRandom, _settings.MaxRandom);
+                            long y = random.Next(_settings.MinRandom, _settings.MaxRandom);
 
-                            if (_settings.ShowAll || _settings.OnlyPassed)
+                            ++_totalTestCase;
+
+                            //HRSameOccurrence.DTree dtree = new HRSameOccurrence.DTree(array);
+                            //dtree.Print();
+
+                           
+
+                            //TEST CASE RUN
+                            //var got = HRSameOccurrence.Solve2(dtree, x, y, array.Length);
+                            //var got = 1;
+
+                            //var got = HRSameOccurrence.SolveUsingDc(solveDc, x, y);
+
+                            var got = solveDc.GetCountFromRoot(x, y, array.Length);
+
+                            var expected = HRSameOccurrence.SolveBf(array, x, y);
+
+                            try
                             {
+                                Assert.AreEqual(expected, got);
+                                ++_passed;
+
+                                if (_settings.ShowAll || _settings.OnlyPassed)
+                                {
+                                    sb.Append(Environment.NewLine);
+                                    sb.Append($"NEW TEST CASE: N = {n}");
+                                    sb.Append(Environment.NewLine);
+                                    sb.Append("Array: ");
+                                    sb.Append(Environment.NewLine);
+
+                                    foreach (var wval in array)
+                                    {
+                                        sb.Append(wval + " ");
+                                    }
+
+                                    sb.Append(Environment.NewLine);
+
+                                    sb.Append("X: " + x + ", Y = " + y);
+
+                                    sb.Append(Environment.NewLine);
+                                    sb.Append(Environment.NewLine);
+
+                                    sb.Append($"got : {got} vs expected: {expected}");
+                                    sb.Append($" --> PASSED TEST CASE");
+                                    sb.Append(Environment.NewLine);
+                                }
+
+                            }
+                            catch (Exception e)
+                            {
+                                ++_falied;
+
                                 sb.Append(Environment.NewLine);
                                 sb.Append($"NEW TEST CASE: N = {n}");
                                 sb.Append(Environment.NewLine);
-                                sb.Append("Array: ");
+                                sb.Append("Array");
                                 sb.Append(Environment.NewLine);
 
                                 foreach (var wval in array)
@@ -106,37 +140,11 @@ namespace UnitTestHRSameOccuranceTest
                                 sb.Append(Environment.NewLine);
 
                                 sb.Append($"got : {got} vs expected: {expected}");
-                                sb.Append($" --> PASSED TEST CASE");
+                                sb.Append($" --> Failed TEST CASE");
                                 sb.Append(Environment.NewLine);
                             }
-
                         }
-                        catch (Exception e)
-                        {
-                            ++_falied;
-
-                            sb.Append(Environment.NewLine);
-                            sb.Append($"NEW TEST CASE: N = {n}");
-                            sb.Append(Environment.NewLine);
-                            sb.Append("Array");
-                            sb.Append(Environment.NewLine);
-
-                            foreach (var wval in array)
-                            {
-                                sb.Append(wval + " ");
-                            }
-
-                            sb.Append(Environment.NewLine);
-
-                            sb.Append("X: " + x + ", Y = " + y);
-
-                            sb.Append(Environment.NewLine);
-                            sb.Append(Environment.NewLine);
-
-                            sb.Append($"got : {got} vs expected: {expected}");
-                            sb.Append($" --> Failed TEST CASE");
-                            sb.Append(Environment.NewLine);
-                        }
+                       
                     }
                     catch (Exception exception)
                     {
@@ -155,7 +163,7 @@ namespace UnitTestHRSameOccuranceTest
 
                         sb.Append(Environment.NewLine);
 
-                        sb.Append($" --> Exception in TEST CASE : Exception : {exception.StackTrace}");
+                        sb.Append($" --> Exception in TEST CASE : Exception :{exception.Message},  {exception.StackTrace}, {exception.InnerException?.StackTrace}");
                         sb.Append(Environment.NewLine);
                     }
                 }

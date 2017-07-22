@@ -26,8 +26,8 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
             Console = new ConsoleHelper();
         }
 
-        //public static void Main_Solver(string[] args)
-        public static void Main(string[] args)
+        public static void Main_Solver(string[] args)
+        //public static void Main(string[] args)
         {
 #if DEBUG
             Stopwatch timer = Stopwatch.StartNew();
@@ -62,7 +62,7 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
             var n = tc[0];
             var q = tc[1];
 
-            var array = Console.NextInts(n);
+            var array = Console.NextLongs(n);
             //SegmentTree segmentTree = new SegmentTree(array);
             //DTree dtree = new DTree(array);
             //dtree.Print();
@@ -81,6 +81,8 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
 
                 var output = SolveUsingDc(solveDc, xy[0], xy[1]);
 
+                //var output = solveDc.GetCountFromRoot(xy[0], xy[1], array.Length);
+
 
                 Console.WriteLine(output);
             }
@@ -93,7 +95,230 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
             return dc.GetCount(x, y);
         }
 
-        public static long SolveBf(int[] array, long x, long y)
+        public class SolveDc
+        {
+            public long[] Array { get; }
+            static readonly Dictionary<long, List<long>> Dictionary = new Dictionary<long, List<long>>();
+            static Dictionary<long, Dictionary<long, Dictionary<long, long>>> _root = new Dictionary<long, Dictionary<long, Dictionary<long, long>>>();
+            private readonly long _count;
+
+            public SolveDc(long[] array)
+            {
+                Array = array;
+                _count = array.Length;
+
+                for (var index = 0; index < array.Length; index++)
+                {
+                    var element = array[index];
+                    if (Dictionary.ContainsKey(element))
+                    {
+                        var value = Dictionary[element];
+                        value.Add(index);
+                    }
+                    else
+                    {
+                        Dictionary.Add(element, new List<long> { index });
+                    }
+                }
+            }
+
+            public SolveDc(long[] array, bool root)
+            {
+                if (root)
+                {
+                    _root = CreateRoot(array);
+                }   
+            }
+
+            public long GetCount(long x, long y)
+            {
+                var n = _count;
+                long breakPointKey = -1;
+
+                if (x == y || !Dictionary.ContainsKey(x) && !Dictionary.ContainsKey(y))
+                {
+                    return n * (n + 1) / 2;
+                }
+
+                if (Dictionary.ContainsKey(x) && !Dictionary.ContainsKey(y))
+                {
+                    breakPointKey = x;
+                }
+                else if (Dictionary.ContainsKey(y) && !Dictionary.ContainsKey(x))
+                {
+                    breakPointKey = y;
+                }
+
+                if (breakPointKey != -1)
+                {
+                    var breakpoints = Dictionary[breakPointKey];
+                    return GetCount(breakpoints, x, y);
+                }
+
+                var xbp = Dictionary[x];
+                var ybp = Dictionary[y];
+
+                foreach (var e in ybp)
+                {
+                    xbp.Add(e);
+                }
+
+                xbp = xbp.OrderBy(e => e).ToList();
+
+                return GetCount(xbp, x, y);
+
+            }
+
+            public long GetCount(List<long> breakpoints, long x, long y)
+            {
+                breakpoints.Add(_count);
+
+                long count = 0;
+                long prevBreakPoint = -1;
+
+                for (var index = 0; index < breakpoints.Count; index++)
+                {
+                    var currbreakPoint = breakpoints[index];
+
+                    if (index > 0)
+                    {
+                        prevBreakPoint = breakpoints[index - 1];
+                    }
+
+                    long prevlen;
+                    if (prevBreakPoint == -1)
+                    {
+                        prevlen = currbreakPoint;
+                    }
+                    else
+                    {
+                        prevlen = currbreakPoint - prevBreakPoint - 1;
+                    }
+
+                    count += prevlen * (prevlen + 1) / 2;
+
+                    long xCount = 0, yCount = 0;
+
+                    for (var i = index; i < breakpoints.Count; i++)
+                    {
+                        var bindex = breakpoints[i];
+                        if (bindex < Array.Length && Array[bindex] == x)
+                        {
+                            ++xCount;
+                        }
+                        else if (bindex < Array.Length && Array[bindex] == y)
+                        {
+                            ++yCount;
+                        }
+
+                        if (xCount == yCount)
+                        {
+                            long nextLen = 0;
+                            if (i != breakpoints.Count - 1)
+                            {
+                                var nextbreakpoint = breakpoints[i + 1];
+                                nextLen = nextbreakpoint - breakpoints[i] - 1;
+                            }
+
+                            if (currbreakPoint != _count && breakpoints[i] != _count)
+                            {
+                                count += prevlen;
+                                count += nextLen;
+                                count += prevlen * nextLen;
+                                ++count;
+
+                                //var ts = prevlen + nextLen + prevlen * nextLen + 1;
+                                //Console.WriteLine($"{currbreakPoint} - {breakpoints[i]} : {ts}");
+                            }
+                        }
+                    }
+                }
+
+                return count;
+            }
+
+            public Dictionary<long, Dictionary<long, Dictionary<long, long>>> CreateRoot(long[] array)
+            {
+                checked
+                {
+                    var dictionary = new Dictionary<long, Dictionary<long, Dictionary<long, long>>>();
+
+                    for (int i = 0; i < array.Length; i++)
+                    {
+                        var colDictionary = new Dictionary<long, Dictionary<long, long>>();
+                        var valuesDict = new Dictionary<long, long>();
+
+                        for (long j = i; j < array.Length; j++)
+                        {
+                            var key = array[j];
+
+                            if (valuesDict.ContainsKey(key))
+                            {
+                                var value = valuesDict[key];
+                                valuesDict[key] = ++value;
+                            }
+                            else
+                            {
+                                valuesDict.Add(key, 1);
+                            }
+
+
+                            var saveDict = new Dictionary<long, long>();
+                            foreach (var value in valuesDict)
+                            {
+                                saveDict.Add(value.Key, value.Value);
+                            }
+
+                            colDictionary.Add(j, saveDict);
+                        }
+
+                        dictionary.Add(i, colDictionary);
+                    }
+
+                    return dictionary;
+                }
+              
+            }
+
+            public long GetCountFromRoot(long x, long y, long len)
+            {
+                checked
+                {
+                    long count = 0;
+
+                    for (var i = 0; i < len; i++)
+                    {
+                        for (var j = i; j < len; j++)
+                        {
+                            Dictionary<long, long> d = _root[i][j];
+                            long xCount = 0, yCount = 0;
+
+                            if (d.ContainsKey(x))
+                            {
+                                xCount = d[x];
+                            }
+
+                            if (d.ContainsKey(y))
+                            {
+                                yCount = d[y];
+                            }
+
+                            if (xCount == yCount)
+                            {
+                                count++;
+                            }
+                        }
+                    }
+
+                    return count;
+                }
+               
+            }
+        }
+
+
+
+        public static long SolveBf(long[] array, long x, long y)
         {
             long count = 0;
 
@@ -108,7 +333,7 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
             return count;
         }
 
-        private static long GetCountUsingBf(int[] array, long x, long y, int i, int j)
+        private static long GetCountUsingBf(long[] array, long x, long y, int i, int j)
         {
             long xCount = 0;
             long yCount = 0;
@@ -134,43 +359,8 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
             return 0;
         }
 
-        public static long Solve2(DTree tree, long x, long y, long len)
-        {
-            long count = 0;
 
-            for (long i = 0; i < len; i++)
-            {
-                for (long j = i; j < len; j++)
-                {
-                    Dictionary<long, long> d = tree.Root[i][j];
-                    long xCount = 0, yCount = 0;
-
-                    if (d.ContainsKey(x))
-                    {
-                        xCount = d[x];
-                    }
-
-                    if (d.ContainsKey(y))
-                    {
-                        yCount = d[y];
-                    }
-
-                    if (xCount == yCount)
-                    {
-
-                        //foreach (var dv in d)
-                        //{
-                        //    Console.Write($"{dv.Key} [{dv.Value}] ");
-                        //}
-
-                        //Console.WriteLine($"");
-                        count++;
-                    }
-                }
-            }
-
-            return count;
-        }
+        #region NotUsed
 
         public static long Solve(SegmentTree tree, long x, long y)
         {
@@ -387,200 +577,10 @@ namespace CpForCompetitiveProgrammingHRSameOccurrence
 
         }
 
-        public class DTree
-        {
-            public Dictionary<long, Dictionary<long, Dictionary<long, long>>> Root { get; }
 
-            public DTree(int[] array)
-            {
-                Root = CreateDictionary(array);
-            }
-
-            public Dictionary<long, Dictionary<long, Dictionary<long, long>>> CreateDictionary(int[] array)
-            {
-                var dictionary = new Dictionary<long, Dictionary<long, Dictionary<long, long>>>();
-
-                for (int i = 0; i < array.Length; i++)
-                {
-                    var colDictionary = new Dictionary<long, Dictionary<long, long>>();
-                    var valuesDict = new Dictionary<long, long>();
-
-                    for (int j = i; j < array.Length; j++)
-                    {
-                        var key = array[j];
-
-                        if (valuesDict.ContainsKey(key))
-                        {
-                            var value = valuesDict[key];
-                            valuesDict[key] = ++value;
-                        }
-                        else
-                        {
-                            valuesDict.Add(key, 1);
-                        }
+        #endregion
 
 
-                        var saveDict = new Dictionary<long, long>();
-                        foreach (var value in valuesDict)
-                        {
-                            saveDict.Add(value.Key, value.Value);
-                        }
-
-                        colDictionary.Add(j, saveDict);
-                    }
-
-                    dictionary.Add(i, colDictionary);
-                }
-
-                return dictionary;
-            }
-
-            public void Print()
-            {
-                foreach (var row in Root)
-                {
-                    foreach (var col in row.Value)
-                    {
-                        foreach (var d in col.Value)
-                        {
-                            Console.Write($"{d.Key} [{d.Value}] ");
-                        }
-
-                        Console.WriteLine($"");
-                    }
-
-                    Console.WriteLine($"");
-                }
-            }
-        }
-
-        public class SolveDc
-        {
-            public int[] Array { get; }
-            readonly Dictionary<long, List<long>> _dictionary = new Dictionary<long, List<long>>();
-            private readonly long _count;
-
-            public SolveDc(int[] array)
-            {
-                Array = array;
-                _count = array.Length;
-
-                for (var index = 0; index < array.Length; index++)
-                {
-                    var element = array[index];
-                    if (_dictionary.ContainsKey(element))
-                    {
-                        var value = _dictionary[element];
-                        value.Add(index);
-                    }
-                    else
-                    {
-                        _dictionary.Add(element, new List<long> { index });
-                    }
-                }
-            }
-
-            public long GetCount(long x, long y)
-            {
-                var n = _count;
-                long breakPointKey = -1;
-
-                if (x == y || !_dictionary.ContainsKey(x) && !_dictionary.ContainsKey(y))
-                {
-                    return n * (n + 1) / 2;
-                }
-
-                if (_dictionary.ContainsKey(x) && !_dictionary.ContainsKey(y))
-                {
-                    breakPointKey = x;
-                }
-                else if (_dictionary.ContainsKey(y) && !_dictionary.ContainsKey(x))
-                {
-                    breakPointKey = y;
-                }
-
-                if (breakPointKey != -1)
-                {
-                    var breakpoints = _dictionary[breakPointKey];
-                    return GetCount(breakpoints, x, y);
-                }
-
-                var xbp = _dictionary[x];
-                var ybp = _dictionary[y];
-
-                foreach (var e in ybp)
-                {
-                    xbp.Add(e);
-                }
-
-                xbp = xbp.OrderBy(e => e).ToList();
-
-                return GetCount(xbp, x, y);
-
-            }
-
-            public long GetCount(List<long> breakpoints, long x, long y)
-            {
-                breakpoints.Add(_count);
-
-                long count = 0;
-                long prevBreakPoint = -1;
-
-                for (var index = 0; index < breakpoints.Count; index++)
-                {
-                    var currbreakPoint = breakpoints[index];
-
-                    if (index > 0)
-                    {
-                        prevBreakPoint = breakpoints[index - 1];
-                    }
-
-                    long prevlen;
-                    if (prevBreakPoint == -1)
-                    {
-                        prevlen = currbreakPoint;
-                    }
-                    else
-                    {
-                        prevlen = currbreakPoint - prevBreakPoint - 1;
-                    }
-
-                    count += prevlen * (prevlen + 1) / 2;
-
-                    long xCount = 0, yCount = 0;
-
-                    for (var i = index; i < breakpoints.Count; i++)
-                    {
-                        var bindex = breakpoints[i];
-                        if (bindex < Array.Length && Array[bindex] == x)
-                        {
-                            ++xCount;
-                        }
-                        else if (bindex < Array.Length && Array[bindex] == y)
-                        {
-                            ++yCount;
-                        }
-
-                        if (xCount == yCount)
-                        {
-                            long nextLen = 0;
-                            if (i != breakpoints.Count - 1)
-                            {
-                                var nextbreakpoint = breakpoints[i + 1];
-                                nextLen = nextbreakpoint - breakpoints[i] - 1;
-                            }
-
-                            count += prevlen;
-                            count += nextLen;
-                            count += prevlen * nextLen;
-                            ++count;
-                        }
-                    }
-                }
-
-                return count;
-            }
-        }
 
         #endregion
     }
