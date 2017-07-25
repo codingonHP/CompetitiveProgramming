@@ -8,9 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Text;
-using CompetitiveProgramming;
 
 namespace CpForCompetitiveProgrammingLCA
 {
@@ -27,8 +25,8 @@ namespace CpForCompetitiveProgrammingLCA
             Console = new ConsoleHelper();
         }
 
-        public static void Main_Solver(string[] args)
-        //public static void Main(string[] args)
+        //public static void Main_Solver(string[] args)
+        public static void Main(string[] args)
         {
 #if DEBUG
             Stopwatch timer = Stopwatch.StartNew();
@@ -77,7 +75,7 @@ namespace CpForCompetitiveProgrammingLCA
                 tree.Nodes[index + 1].Weight = value;
             }
 
-            var output = tree.QueryBf(nodes);
+            var output = tree.RmqQuery(nodes);
 
             Console.WriteLine(output);
         }
@@ -108,7 +106,7 @@ namespace CpForCompetitiveProgrammingLCA
 
             public readonly List<long> DfsRmq = new List<long>();
             public readonly Dictionary<long, long> FirstEncounter = new Dictionary<long, long>();
-
+            public readonly Dictionary<long, long> MappingDictionary = new Dictionary<long, long>();
             public Dictionary<long, List<long>> RmqDictionary = new Dictionary<long, List<long>>();
 
 
@@ -353,18 +351,12 @@ namespace CpForCompetitiveProgrammingLCA
 
                 long s = 0;
 
-                for (int i = 1; i <= n; i++)
+                for (long i = 1; i <= n; i++)
                 {
-                    for (int j = i; j <= n; j++)
+                    for (long j = i; j <= n; j++)
                     {
-                        var temp = j;
-                        if (i > j)
-                        {
-                            j = i;
-                            i = temp;
-                        }
-
                         var lvalue = RmqTravel(i, j, segmentTree);
+                        lvalue = GetFValue(lvalue);
 
                         if (i != j)
                         {
@@ -384,39 +376,86 @@ namespace CpForCompetitiveProgrammingLCA
                 return s;
             }
 
-            private long RmqTravel(long l, long r, AdvancedDataStructure.SegmentTree<long> segmentTree)
+            private void Swap(ref long low, ref long high)
             {
-                var fromNode = Nodes[l];
-                var toNode = Nodes[r];
-
-                var min = segmentTree.Query(l, r, Math.Min, node => node.Value);
+                var temp = high;
+                if (low > high)
+                {
+                    high = low;
+                    low = temp;
+                }
             }
 
-            private long RmqTrvel(long l, long r, long lca, long from, long to, ref bool reached,  AdvancedDataStructure.SegmentTree<long> segmentTree)
+            private long RmqTravel(long from, long to, AdvancedDataStructure.SegmentTree<long> segmentTree)
             {
-                if (node == null)
+                var fromNode = Nodes[from];
+                var toNode = Nodes[to];
+
+                if (from == to)
                 {
-                    return;
+                    return fromNode.Weight;
                 }
 
-                if (node.InternalValue == -1)
+                var l = fromNode.InternalValue;
+                var r = toNode.InternalValue;
+                Swap(ref l, ref r);
+
+                var lca = segmentTree.Query(l, to, Math.Min, node => node.Value);
+                long weight = 0;
+
+                var temp = fromNode;
+                var lcaNode = Nodes[MappingDictionary[lca]];
+
+                Node prevNode = null;
+                while (temp.InternalValue != lcaNode.InternalValue)
                 {
-                    node.InternalValue = counter;
-                    FirstEncounter.Add(node.InternalValue, DfsRmq.Count);
+                    weight += temp.Weight;
+                    prevNode = temp;
+                    temp = temp.Parent;
                 }
 
-                foreach (KeyValuePair<long, Node> reachableNode in node.ReachableNodes)
+                //weight += temp.Weight;
+
+               
+
+                weight += RmqTravel(temp, toNode, prevNode, lca, segmentTree);
+
+                return weight;
+            }
+
+            private long RmqTravel(Node fromNode, Node toNode, Node prev, long lca, AdvancedDataStructure.SegmentTree<long> segmentTree)
+            {
+                long sum = fromNode.Weight;
+
+                foreach (KeyValuePair<long, Node> reachableNode in fromNode.ReachableNodes)
                 {
                     var nextNode = reachableNode.Value;
+
+                    if (nextNode.InternalValue == toNode.InternalValue)
+                    {
+                        return sum + nextNode.Weight;
+                    }
 
                     if (prev != null && nextNode.Value == prev.Value)
                     {
                         continue;
                     }
 
-                    DfsRmq.Add(node.InternalValue);
-                    RmqDfs(nextNode, node, ++counter);
+                    var l = toNode.InternalValue;
+                    var r = nextNode.InternalValue;
+                    Swap(ref l, ref r);
+
+                    var nextLca = segmentTree.Query(l, r, Math.Min, node => node.Value);
+
+                    if (nextLca == lca)
+                    {
+                        continue;
+                    }
+                   
+                    sum += RmqTravel(nextNode, toNode, fromNode, lca, segmentTree);
                 }
+
+                return sum;
             }
 
             private void RmqDfs(Node node, Node prev, long counter)
@@ -429,8 +468,11 @@ namespace CpForCompetitiveProgrammingLCA
                 if (node.InternalValue == -1)
                 {
                     node.InternalValue = counter;
-                    FirstEncounter.Add(node.InternalValue, DfsRmq.Count);
+                    FirstEncounter.Add(node.InternalValue, DfsRmq.Count); //exception
+                    MappingDictionary.Add(node.InternalValue, node.Value);
                 }
+
+                DfsRmq.Add(node.InternalValue);
 
                 foreach (KeyValuePair<long, Node> reachableNode in node.ReachableNodes)
                 {
@@ -440,10 +482,17 @@ namespace CpForCompetitiveProgrammingLCA
                     {
                         continue;
                     }
+                    
+                    RmqDfs(nextNode, node, ++counter);
 
                     DfsRmq.Add(node.InternalValue);
-                    RmqDfs(nextNode, node, ++counter);
                 }
+
+                if (node.ReachableNodes.Count >  1)
+                {
+                    DfsRmq.RemoveAt(DfsRmq.Count - 1);
+                }
+              
             }
 
             private void TravelForDfs(Node node, Node prev, long recSum)
@@ -1584,6 +1633,174 @@ namespace CpForCompetitiveProgrammingLCA
             return high;
 
         }
+    }
+
+    public static class AdvancedDataStructure
+    {
+        public class SegmentTree<T>
+        {
+
+            public class SegmentTreeNode
+            {
+                public T Value { get; set; }
+                public long MinRange { get; set; }
+                public long MaxRange { get; set; }
+                public SegmentTreeNode LeftNode { get; set; }
+                public SegmentTreeNode RightNode { get; set; }
+            }
+
+            public Dictionary<long, SegmentTreeNode> SegmentDictionary { get; } = new Dictionary<long, SegmentTreeNode>();
+            public SegmentTreeNode Root { get; private set; }
+            public T[] Array { get; }
+            public T DefaultValue { get; set; }
+
+            public Func<T, long, T> BaseValueProvider { get; }
+            public Func<SegmentTreeNode, SegmentTreeNode, T> LevelValueProvider { get; }
+
+            public SegmentTree(T[] array, T defaultValue, Func<T, long, T> baseValueProvider, Func<SegmentTreeNode, SegmentTreeNode, T> levelValueProvider)
+            {
+                Array = array;
+                DefaultValue = defaultValue;
+                BaseValueProvider = baseValueProvider;
+                LevelValueProvider = levelValueProvider;
+                CreateTree(baseValueProvider, levelValueProvider);
+            }
+
+            public T Query(long l, long r, Func<T, T, T> queryFunc, Func<SegmentTreeNode, T> inRangeValueProvider)
+            {
+                var node = Root;
+                var value = Travel(node, l, r, queryFunc, inRangeValueProvider);
+
+                return value;
+            }
+
+            private void CreateTree(Func<T, long, T> baseValueProvider, Func<SegmentTreeNode, SegmentTreeNode, T> levelValueProvider)
+            {
+                var baseLength = NextPowerOf2(Array.Length);
+                var totalNodes = Math.Pow(2, Math.Log(baseLength, 2) + 1) - 1;
+                long leftChildIndex = -1, rightChildIndex = -1;
+                long levelLength = baseLength;
+
+                for (int i = 0; i < totalNodes; i++)
+                {
+                    for (int j = 0; j < levelLength; j++)
+                    {
+
+                        SegmentTreeNode left = null, right = null;
+
+                        if (i == baseLength)
+                        {
+                            leftChildIndex = 0;
+                            rightChildIndex = 1;
+                        }
+                        else if (i > baseLength)
+                        {
+                            leftChildIndex += 2;
+                            rightChildIndex += 2;
+                        }
+                        else
+                        {
+                            leftChildIndex = i;
+                            rightChildIndex = i;
+                        }
+
+                        long minreach;
+                        long maxreach;
+                        if (i >= baseLength)
+                        {
+                            left = SegmentDictionary[leftChildIndex];
+                            right = SegmentDictionary[rightChildIndex];
+                            minreach = left.MinRange;
+                            maxreach = right.MaxRange;
+                        }
+                        else
+                        {
+                            minreach = maxreach = i;
+                        }
+
+                        T value = DefaultValue;
+
+                        if (left != null)
+                        {
+                            value = levelValueProvider(left, right);
+                        }
+                        else if (i < Array.Length)
+                        {
+                            value = baseValueProvider(Array[i], i);
+                        }
+
+
+                        SegmentTreeNode node = new SegmentTreeNode
+                        {
+                            Value = value,
+                            LeftNode = left,
+                            RightNode = right,
+                            MinRange = minreach,
+                            MaxRange = maxreach
+                        };
+
+                        SegmentDictionary.Add(i, node);
+
+                        ++i;
+                    }
+
+                    levelLength /= 2;
+                    --i;
+                }
+
+                Root = SegmentDictionary.Last().Value;
+            }
+
+            private T Travel(SegmentTreeNode node, long l, long r, Func<T, T, T> queryFunc, Func<SegmentTreeNode, T> inRangeFun)
+            {
+                if (node == null)
+                {
+                    return DefaultValue;
+                }
+
+                var nodeMinRange = node.MinRange;
+                var nodeMaxRange = node.MaxRange;
+
+                var state = RangeAssessment(l, r, nodeMinRange, nodeMaxRange);
+
+                if (state == -1)
+                {
+                    return DefaultValue;
+                }
+
+                if (state == 1)
+                {
+                    return inRangeFun(node);
+                }
+
+                var lvalue = Travel(node.LeftNode, l, r, queryFunc, inRangeFun);
+                var rvalue = Travel(node.RightNode, l, r, queryFunc, inRangeFun);
+
+                return queryFunc(lvalue, rvalue);
+            }
+
+            private long RangeAssessment(long l, long r, long nodeMinRange, long nodeMaxRange)
+            {
+                if (nodeMinRange >= l && nodeMaxRange <= r)
+                {
+                    return 1; //in range, return from here.
+                }
+
+                if (nodeMaxRange < l || nodeMinRange > r)
+                {
+                    return -1; //out of range, ignore.
+                }
+
+                return 0; // go both sides.
+            }
+
+            private long NextPowerOf2(long n)
+            {
+                var p = Math.Ceiling(Math.Log(n, 2));
+                return (long)Math.Pow(2, p);
+            }
+        }
+
     }
 
     #endregion

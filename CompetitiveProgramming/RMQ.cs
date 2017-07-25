@@ -27,8 +27,8 @@ namespace CpForCompetitiveProgrammingRMQ
             Console = new ConsoleHelper();
         }
 
-        //public static void Main_Solver(string[] args)
-        public static void Main(string[] args)
+        public static void Main_Solver(string[] args)
+        //public static void Main(string[] args)
         {
 #if DEBUG
             Stopwatch timer = Stopwatch.StartNew();

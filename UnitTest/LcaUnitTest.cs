@@ -26,7 +26,7 @@ namespace UnitTestLcaUnitTest
             OnlyFailed = true,
             OnlyPassed = false,
             IterationCount = 1,
-            SubIterationCount = 200,
+            SubIterationCount = 5,
             MinRandom = 10000,
             MaxRandom = 1000000
         };
@@ -56,7 +56,6 @@ namespace UnitTestLcaUnitTest
                     {
                         n = (int)i;
 
-                        var intTree = TreeGenerator.CreateIntTree();
                         tree = new LCA.Tree();
                         tree = LCA.Tree.RandomTree(n);
 
@@ -64,7 +63,7 @@ namespace UnitTestLcaUnitTest
 
 
                         //TEST CASE RUN
-                        var got = tree.Query(n);
+                        var got = tree.RmqQuery(n);
                         var expected = tree.QueryBf(n);
 
                         try
