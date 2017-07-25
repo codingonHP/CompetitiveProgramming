@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using CompetitiveProgramming;
 
@@ -78,12 +79,26 @@ namespace CpForCompetitiveProgrammingRMQ
             //var min = tree.QueryMin(l, r);
             //return min;
 
+            const int inf = (int)1e9;
+            var segmentTree = new AdvancedDataStructure.SegmentTree<long>(array, inf,
+                    (value, index) => value, (nodeLeft, nodeRight) => Math.Min(nodeLeft.Value, nodeRight.Value));
 
-            AdvancedDataStructure.SegmentTree<long> segmentTree = new AdvancedDataStructure.SegmentTree<long>(array, long.MaxValue,
-                (value, index) => value, (nodeLeft, nodeRight) => Math.Min(nodeLeft.Value, nodeRight.Value));
+            var min = segmentTree.Query(l, r, Math.Min, node => node.Value);
+            return min;
+        }
 
-            var min = segmentTree.Query(l, r, (lvalue, rvalue) => Math.Min(lvalue, rvalue));
+        public static long SolveBf(long[] array, long l, long r)
+        {
+            long min = long.MaxValue;
+            for (var i = l; i <= r; i++)
+            {
+                if (min > array[i])
+                {
+                    min = array[i];
+                }
+            }
 
+            return min;
         }
 
         #endregion

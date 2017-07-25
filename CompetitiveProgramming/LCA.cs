@@ -8,7 +8,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
+using CompetitiveProgramming;
 
 namespace CpForCompetitiveProgrammingLCA
 {
@@ -89,6 +91,8 @@ namespace CpForCompetitiveProgrammingLCA
             public long Value { get; set; }
             public long Weight { get; set; }
             public bool IsRoot { get; set; }
+            public long InternalValue { get; set; } = -1;
+
         }
 
         public class Tree
@@ -102,7 +106,11 @@ namespace CpForCompetitiveProgrammingLCA
                 {1, 1}
             };
 
+            public readonly List<long> DfsRmq = new List<long>();
+            public readonly Dictionary<long, long> FirstEncounter = new Dictionary<long, long>();
+
             public Dictionary<long, List<long>> RmqDictionary = new Dictionary<long, List<long>>();
+
 
             public long Query(long n)
             {
@@ -333,6 +341,111 @@ namespace CpForCompetitiveProgrammingLCA
                 TravelForDfs(Root, null, 0);
             }
 
+
+            public long RmqQuery(long n)
+            {
+                RmqDfs(Root, null, 0);
+                var array = DfsRmq.ToArray();
+                const int inf = (int)1e9;
+
+                var segmentTree = new AdvancedDataStructure.SegmentTree<long>(array, inf,
+                    (value, index) => value, (nodeLeft, nodeRight) => Math.Min(nodeLeft.Value, nodeRight.Value));
+
+                long s = 0;
+
+                for (int i = 1; i <= n; i++)
+                {
+                    for (int j = i; j <= n; j++)
+                    {
+                        var temp = j;
+                        if (i > j)
+                        {
+                            j = i;
+                            i = temp;
+                        }
+
+                        var lvalue = RmqTravel(i, j, segmentTree);
+
+                        if (i != j)
+                        {
+                            lvalue *= 2;
+                        }
+
+                        s += lvalue;
+
+                        if (s >= Mod)
+                        {
+                            s %= Mod;
+                        }
+
+                    }
+                }
+
+                return s;
+            }
+
+            private long RmqTravel(long l, long r, AdvancedDataStructure.SegmentTree<long> segmentTree)
+            {
+                var fromNode = Nodes[l];
+                var toNode = Nodes[r];
+
+                var min = segmentTree.Query(l, r, Math.Min, node => node.Value);
+            }
+
+            private long RmqTrvel(long l, long r, long lca, long from, long to, ref bool reached,  AdvancedDataStructure.SegmentTree<long> segmentTree)
+            {
+                if (node == null)
+                {
+                    return;
+                }
+
+                if (node.InternalValue == -1)
+                {
+                    node.InternalValue = counter;
+                    FirstEncounter.Add(node.InternalValue, DfsRmq.Count);
+                }
+
+                foreach (KeyValuePair<long, Node> reachableNode in node.ReachableNodes)
+                {
+                    var nextNode = reachableNode.Value;
+
+                    if (prev != null && nextNode.Value == prev.Value)
+                    {
+                        continue;
+                    }
+
+                    DfsRmq.Add(node.InternalValue);
+                    RmqDfs(nextNode, node, ++counter);
+                }
+            }
+
+            private void RmqDfs(Node node, Node prev, long counter)
+            {
+                if (node == null)
+                {
+                    return;
+                }
+
+                if (node.InternalValue == -1)
+                {
+                    node.InternalValue = counter;
+                    FirstEncounter.Add(node.InternalValue, DfsRmq.Count);
+                }
+
+                foreach (KeyValuePair<long, Node> reachableNode in node.ReachableNodes)
+                {
+                    var nextNode = reachableNode.Value;
+
+                    if (prev != null && nextNode.Value == prev.Value)
+                    {
+                        continue;
+                    }
+
+                    DfsRmq.Add(node.InternalValue);
+                    RmqDfs(nextNode, node, ++counter);
+                }
+            }
+
             private void TravelForDfs(Node node, Node prev, long recSum)
             {
                 if (node == null)
@@ -476,7 +589,7 @@ namespace CpForCompetitiveProgrammingLCA
             public void FillSparseTable(long[] array)
             {
                 var len = 1;
-                
+
 
             }
 
@@ -491,50 +604,6 @@ namespace CpForCompetitiveProgrammingLCA
 
 
         #endregion
-    }
-
-    public class TreeNode<T>
-    {
-        public Dictionary<long, TreeNode<T>> Childs { get; } = new Dictionary<long, TreeNode<T>>();
-        public long Weight { get; set; }
-        public T Value { get; set; }
-    }
-
-    public class TreeGenerator
-    {
-        private readonly int _maxChilds;
-        private readonly Random _rnd = new Random();
-        private static long NextValue = 1;
-
-        public TreeGenerator(int maxChilds)
-        {
-            this._maxChilds = maxChilds;
-        }
-
-        public TreeNode<T> CreateTree<T>(int maxDepth, Func<T> valueGenerator)
-        {
-            var node = new TreeNode<T> { Value = valueGenerator() };
-            if (maxDepth > 0)
-            {
-                var childsCount = _rnd.Next(_maxChilds);
-                for (var i = 0; i < childsCount; ++i)
-                    node.Childs.Add(i, CreateTree(maxDepth - 1, valueGenerator));
-            }
-
-            return node;
-        }
-
-        public static TreeNode<long> CreateIntTree()
-        {
-            //NextValue = 
-            //var generator = new TreeGenerator(3 /* max childs count*/);
-            //var tree = generator.CreateTree(4 /*max depth*/, () => NextValue /*node value*/);
-
-            //return tree;
-            return null;
-        }
-
-
     }
 
 

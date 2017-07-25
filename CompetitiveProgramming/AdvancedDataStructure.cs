@@ -8,6 +8,7 @@ namespace CompetitiveProgramming
     {
         public class SegmentTree<T>
         {
+            
             public class SegmentTreeNode
             {
                 public T Value { get; set; }
@@ -20,12 +21,12 @@ namespace CompetitiveProgramming
             public Dictionary<long, SegmentTreeNode> SegmentDictionary { get; } = new Dictionary<long, SegmentTreeNode>();
             public SegmentTreeNode Root { get; private set; }
             public T[] Array { get; }
-            public object DefaultValue { get; set; }
+            public T DefaultValue { get; set; }
 
-            public Func<T, long, object> BaseValueProvider { get; }
-            public Func<SegmentTreeNode, SegmentTreeNode, object> LevelValueProvider { get; }
+            public Func<T, long, T> BaseValueProvider { get; }
+            public Func<SegmentTreeNode, SegmentTreeNode, T> LevelValueProvider { get; }
 
-            public SegmentTree(T[] array, object defaultValue, Func<T, long, object> baseValueProvider, Func<SegmentTreeNode, SegmentTreeNode, object> levelValueProvider)
+            public SegmentTree(T[] array, T defaultValue, Func<T, long, T> baseValueProvider, Func<SegmentTreeNode, SegmentTreeNode, T> levelValueProvider)
             {
                 Array = array;
                 DefaultValue = defaultValue;
@@ -34,15 +35,15 @@ namespace CompetitiveProgramming
                 CreateTree(baseValueProvider, levelValueProvider);
             }
 
-            public object Query(long l, long r, Func<T, T, object> queryFunc)
+            public T Query(long l, long r, Func<T, T, T> queryFunc, Func<SegmentTreeNode, T> inRangeValueProvider)
             {
                 var node = Root;
-                var value = Travel(node, l, r, queryFunc);
+                var value = Travel(node, l, r, queryFunc, inRangeValueProvider);
 
                 return value;
             }
 
-            private void CreateTree(Func<T, long, object> baseValueProvider, Func<SegmentTreeNode, SegmentTreeNode, object> levelValueProvider)
+            private void CreateTree(Func<T, long, T> baseValueProvider, Func<SegmentTreeNode, SegmentTreeNode, T> levelValueProvider)
             {
                 var baseLength = NextPowerOf2(Array.Length);
                 var totalNodes = Math.Pow(2, Math.Log(baseLength, 2) + 1) - 1;
@@ -86,7 +87,7 @@ namespace CompetitiveProgramming
                             minreach = maxreach = i;
                         }
 
-                        object value = DefaultValue;
+                        T value = DefaultValue;
 
                         if (left != null)
                         {
@@ -100,7 +101,7 @@ namespace CompetitiveProgramming
 
                         SegmentTreeNode node = new SegmentTreeNode
                         {
-                            Value = (T)value,
+                            Value = value,
                             LeftNode = left,
                             RightNode = right,
                             MinRange = minreach,
@@ -119,7 +120,7 @@ namespace CompetitiveProgramming
                 Root = SegmentDictionary.Last().Value;
             }
            
-            private object Travel(SegmentTreeNode node, long l, long r, Func<T, T, object> queryFunc)
+            private T Travel(SegmentTreeNode node, long l, long r, Func<T, T, T> queryFunc, Func<SegmentTreeNode, T> inRangeFun)
             {
                 if (node == null)
                 {
@@ -138,11 +139,11 @@ namespace CompetitiveProgramming
 
                 if (state == 1)
                 {
-                    return node.Value;
+                    return inRangeFun(node);
                 }
 
-                var lvalue = Travel(node.LeftNode, l, r, queryFunc);
-                var rvalue = Travel(node.RightNode, l, r, queryFunc);
+                var lvalue = Travel(node.LeftNode, l, r, queryFunc, inRangeFun);
+                var rvalue = Travel(node.RightNode, l, r, queryFunc, inRangeFun);
 
                 return queryFunc(lvalue, rvalue);
             }
