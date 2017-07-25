@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using CompetitiveProgramming;
 
 namespace CpForCompetitiveProgrammingRMQ
 {
@@ -73,9 +74,16 @@ namespace CpForCompetitiveProgrammingRMQ
 #endif
         public static long Solve(long[] array, long l, long r)
         {
-            SegmentTree tree = new SegmentTree(array, long.MaxValue);
-            var min = tree.QueryMin(l, r);
-            return min;
+            //SegmentTree tree = new SegmentTree(array, long.MaxValue);
+            //var min = tree.QueryMin(l, r);
+            //return min;
+
+
+            AdvancedDataStructure.SegmentTree<long> segmentTree = new AdvancedDataStructure.SegmentTree<long>(array, long.MaxValue,
+                (value, index) => value, (nodeLeft, nodeRight) => Math.Min(nodeLeft.Value, nodeRight.Value));
+
+            var min = segmentTree.Query(l, r, (lvalue, rvalue) => Math.Min(lvalue, rvalue));
+
         }
 
         #endregion

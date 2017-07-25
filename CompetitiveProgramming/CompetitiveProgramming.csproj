@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="8Queen.cs" />
+    <Compile Include="AdvancedDataStructure.cs" />
     <Compile Include="AliceAndBobTurns.cs" />
     <Compile Include="Anagram.cs" />
     <Compile Include="BaseSolver.cs" />
