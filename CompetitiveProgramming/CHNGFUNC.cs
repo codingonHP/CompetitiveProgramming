@@ -10,9 +10,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace CpForCompetitiveProgrammingLCA
+namespace CpForCompetitiveProgrammingCHNGFUNC
 {
-    public static class LCA
+    public static class CHNGFUNC
     {
         #region Main
 
@@ -20,7 +20,7 @@ namespace CpForCompetitiveProgrammingLCA
         private const long MaxArrySize = 100000000L;
         private static ConsoleHelper Console { get; set; }
 
-        static LCA()
+        static CHNGFUNC()
         {
             Console = new ConsoleHelper();
         }
@@ -57,484 +57,70 @@ namespace CpForCompetitiveProgrammingLCA
 
         private static void TestCases()
         {
-            var nodes = Console.NextInt(true);
-
-
-            Tree tree = new Tree();
-            for (int i = 1; i < nodes; i++)
-            {
-                var input = Console.NextInts(2);
-                tree.AddNode(input[0], input[1]);
-            }
-
-            var values = Console.NextLongs(nodes);
-
-            for (var index = 0; index < values.Length; index++)
-            {
-                long value = values[index];
-                tree.Nodes[index + 1].Weight = value;
-            }
-
-            var output = tree.QueryBf(nodes);
-
+            var tc = Console.NextLongs(2);
+            var output = SolveBf(tc[0], tc[1]);
+            var output2 = Solve(tc[0], tc[1]);
             Console.WriteLine(output);
         }
 
 #endif
-
-        public class Node
+        public static long SolveBf(long a, long b)
         {
-            public Node Parent { get; set; }
-            public Dictionary<long, Node> ReachableNodes { get; set; } = new Dictionary<long, Node>();
-            public long Value { get; set; }
-            public long Weight { get; set; }
-            public bool IsRoot { get; set; }
+            long count = 0;
+            for (int i = 1; i <= a; i++)
+            {
+                for (int j = i; j <= b; j++)
+                {
+                    if (Valid(i, j))
+                    {
+                        ++count;
+                        Console.WriteLine($"{i}, {j} = {i * i + j}");
+                    }
+                }
+            }
+
+
+            return count;
         }
 
-        public class Tree
+        public static long Solve(long a, long b)
         {
-            public Node Root { get; private set; }
-            public readonly Dictionary<long, Node> Nodes = new Dictionary<long, Node>();
-            public readonly Dictionary<string, long> SumDictionary = new Dictionary<string, long>();
-            public readonly Dictionary<long, long> FeDictionary = new Dictionary<long, long>
+            long count = 0;
+            var max = a * a + b;
+            var numbers = NumberOfSquares(2, max);
+
+            for (int i = 2; i <= numbers + 1; i++)
             {
-                {0, 1},
-                {1, 1}
-            };
+                var bp = 2 * i - 1;
+                var ap = Math.Sqrt(i * i - bp);
 
-            public Dictionary<long, List<long>> RmqDictionary = new Dictionary<long, List<long>>();
-
-            public long Query(long n)
-            {
-                long s = 0;
-                Dfs();
-
-                for (int i = 1; i <= n; i++)
+                if (bp <= b)
                 {
-                    for (int j = i; j <= n; j++)
-                    {
-                        var lvalue = GetLValue(i, j);
-
-                        if (i != j)
-                        {
-                            lvalue *= 2;
-                        }
-
-                        s += lvalue;
-
-                        if (s >= Mod)
-                        {
-                            s %= Mod;
-                        }
-
-                    }
+                    Console.WriteLine($"{ap} - {bp} = {i * i}");
+                    ++count;
                 }
-
-                return s;
-            }
-
-            public long QueryBf(long n)
-            {
-                long s = 0;
-
-                for (int i = 1; i <= n; i++)
-                {
-                    for (int j = i; j <= n; j++)
-                    {
-                        Stack<Node> stack = new Stack<Node>();
-                        bool reached = false;
-
-                        Travel(this, i, i, j, ref reached, stack);
-
-                        var lvalue = GetFValue(stack.Sum(sv => sv.Weight));
-                        if (i != j)
-                        {
-                            lvalue *= 2;
-                        }
-
-                        s += lvalue;
-
-                        if (s >= Mod)
-                        {
-                            s %= Mod;
-                        }
-
-                    }
-                }
-
-                return s;
-            }
-
-            private long GetLValue(int a, int b)
-            {
-                checked
-                {
-                    var key = string.Format("{0}-{1}", a, b);
-
-                    if (SumDictionary.ContainsKey(key))
-                    {
-                        return GetFValue(SumDictionary[key]);
-                    }
-
-                    var aKey = string.Format("{0}-{1}", 1, a);
-                    var bKey = string.Format("{0}-{1}", 1, b);
-
-                    var sumA = SumDictionary[aKey];
-                    var sumB = SumDictionary[bKey];
-
-                    var lca = Lca(a, b);
-
-                    var valueOfLca = SumDictionary[string.Format("{0}-{1}", lca, lca)];
-                    var sumTillLca = SumDictionary[string.Format("{0}-{1}", 1, lca)];
-
-                    var sum = sumA - sumTillLca + sumB - sumTillLca + valueOfLca;
-
-                    return GetFValue(sum);
-                }
-            }
-
-            public void AddNode(long a, long b)
-            {
-                Node nodea, nodeb;
-                bool nodeaparent = false, nodebparent = false;
-
-                if (Nodes.ContainsKey(a))
-                {
-                    nodea = Nodes[a];
-                    if (nodea.IsRoot || nodea.Parent != null)
-                    {
-                        nodeaparent = true;
-                    }
-                }
-                else
-                {
-                    nodea = new Node { Value = a, Weight = a };
-                    Nodes.Add(a, nodea);
-                }
-
-                if (Nodes.ContainsKey(b))
-                {
-                    nodeb = Nodes[b];
-                    if (nodeb.IsRoot || nodeb.Parent != null)
-                    {
-                        nodebparent = true;
-                    }
-                }
-                else
-                {
-                    nodeb = new Node { Value = b, Weight = b };
-                    Nodes.Add(b, nodeb);
-                }
-
-                nodea.ReachableNodes.Add(b, nodeb);
-                nodeb.ReachableNodes.Add(a, nodea);
-
-                if (Root == null)
-                {
-                    Root = nodea;
-                    nodea.Parent = null;
-                    nodea.IsRoot = true;
-                    nodeb.Parent = nodea;
-                }
-                else
-                {
-                    if (nodeaparent)
-                    {
-                        nodeb.Parent = nodea;
-                        foreach (var reachableNode in nodeb.ReachableNodes)
-                        {
-                            if (!reachableNode.Value.IsRoot && reachableNode.Value.Parent == null)
-                            {
-                                reachableNode.Value.Parent = nodeb;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-                    }
-                    else if (nodebparent)
-                    {
-                        nodea.Parent = nodeb;
-
-                        foreach (var reachableNode in nodea.ReachableNodes)
-                        {
-                            if (reachableNode.Value.Parent == null)
-                            {
-                                reachableNode.Value.Parent = nodea;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            public long? Lca(int a, int b)
-            {
-                bool found = false;
-                return TraverseForLca(Root, null, a, b, ref found);
-            }
-
-            private long? TraverseForLca(Node node, Node prev, long a, long b, ref bool found)
-            {
-                if (node == null)
-                {
-                    return null;
-                }
-
-                if (node.Value == a)
-                {
-                    return a;
-                }
-
-                if (node.Value == b)
-                {
-                    return b;
-                }
-
-
-                long? f = null;
-
-                foreach (KeyValuePair<long, Node> reachableNode in node.ReachableNodes)
-                {
-                    var n = reachableNode.Value;
-
-                    if (prev != null && n.Value == prev.Value)
-                    {
-                        continue;
-                    }
-
-                    long? lca = TraverseForLca(n, node, a, b, ref found);
-
-                    if (found)
-                    {
-                        return lca;
-                    }
-
-                    if (lca != null && f == null)
-                    {
-                        f = lca;
-                    }
-                    else if (lca != null)
-                    {
-                        found = true;
-                        return node.Value;
-                    }
-                }
-
-                return f;
-            }
-
-            public void Dfs()
-            {
-                TravelForDfs(Root, null, 0);
-            }
-
-            private void TravelForDfs(Node node, Node prev, long recSum)
-            {
-                if (node == null)
-                {
-                    return;
-                }
-
-                var key = string.Format("{0}-{1}", 1, node.Value);
-                var iKey = string.Format("{0}-{1}", node.Value, node.Value);
-
-                var weight = node.Weight;
-
-                if (!SumDictionary.ContainsKey(iKey))
-                {
-                    SumDictionary.Add(iKey, weight);
-                }
-
-                checked
-                {
-                    weight = recSum + node.Weight;
-                }
-
-                foreach (KeyValuePair<long, Node> reachableNode in node.ReachableNodes)
-                {
-                    var n = reachableNode.Value;
-
-                    if (prev != null && n.Value == prev.Value)
-                    {
-                        if (!SumDictionary.ContainsKey(key))
-                        {
-                            SumDictionary.Add(key, weight);
-                        }
-
-                        continue;
-                    }
-
-                    if (!SumDictionary.ContainsKey(key))
-                    {
-                        SumDictionary.Add(key, weight);
-                    }
-
-                    TravelForDfs(n, node, weight);
-                }
-            }
-
-            public long GetFValue(long n)
-            {
-
-                if (n <= 0)
-                {
-                    return 1;
-                }
-
-                if (FeDictionary.ContainsKey(n))
-                {
-                    return FeDictionary[n];
-                }
-
-                long k = n / 2;
-                long f;
-
-                if (n % 2 == 0)
-                {
-                    f = (GetFValue(k) * GetFValue(k) + GetFValue(k - 1) * GetFValue(k - 1)) % Mod;
-                    FeDictionary.Add(n, f);
-                    return f;
-                }
-
-                f = (GetFValue(k) * GetFValue(k + 1) + GetFValue(k - 1) * GetFValue(k)) % Mod;
-                FeDictionary.Add(n, f);
-                return f;
-            }
-
-            public static Tree RandomTree(long nodeCount)
-            {
-                Queue<long> nodeQueue = new Queue<long>();
-
-                Random random = new Random(1997);
-
-                for (int i = 1; i <= nodeCount; i++)
-                {
-                    nodeQueue.Enqueue(i);
-                }
-
-                var nodeA = nodeQueue.Dequeue();
-                var nodeB = nodeQueue.Dequeue();
-
-                Tree tree = new Tree();
-                tree.AddNode(nodeA, nodeB);
-                List<long> treeNodeList = new List<long> { nodeA, nodeB };
-
-                while (nodeQueue.Count > 0)
-                {
-                    var nextNode = nodeQueue.Dequeue();
-                    var randomSelect = random.Next(0, tree.Nodes.Count - 1);
-                    tree.AddNode(nextNode, treeNodeList[randomSelect]);
-                    treeNodeList.Add(nextNode);
-                }
-
-                return tree;
-            }
-
-            public void Travel(Tree path, long prev, long from, long to, ref bool reached, Stack<Node> stack)
-            {
-                stack.Push(path.Nodes[from]);
-                var fromNode = path.Nodes[from];
-
-                if (fromNode.Value == to)
-                {
-                    reached = true;
-                    return;
-                }
-
-                foreach (var reachableNode in fromNode.ReachableNodes)
-                {
-                    if (reachableNode.Value.Value == prev)
-                    {
-                        continue;
-                    }
-
-                    Travel(path: path,
-                        prev: from,
-                        from: reachableNode.Value.Value,
-                        to: to,
-                        reached: ref reached,
-                        stack: stack
-                    );
-
-                    if (reached)
-                    {
-                        break;
-                    }
-                }
-
-                if (!reached)
-                {
-                    stack.Pop();
-                }
-            }
-
-            public void FillSparseTable(long[] array)
-            {
-                var len = 1;
-                
 
             }
 
-            public long PrevPowerOf2(long n)
-            {
-                var pow = Math.Floor(Math.Log(n, 2));
-                return (long)Math.Pow(2, pow);
-            }
 
+            return count;
         }
 
+        public static bool Valid(long a, long b)
+        {
+            var value = a * a + b;
+            var sqt = (long)Math.Sqrt(value);
 
+            return sqt * sqt == value;
+        }
+
+        public static long NumberOfSquares(long a, long b)
+        {
+            return (long)(Math.Floor(Math.Sqrt(b)) -
+                    Math.Ceiling(Math.Sqrt(a)) + 1);
+        }
 
         #endregion
-    }
-
-    public class TreeNode<T>
-    {
-        public Dictionary<long, TreeNode<T>> Childs { get; } = new Dictionary<long, TreeNode<T>>();
-        public long Weight { get; set; }
-        public T Value { get; set; }
-    }
-
-    public class TreeGenerator
-    {
-        private readonly int _maxChilds;
-        private readonly Random _rnd = new Random();
-        private static long NextValue = 1;
-
-        public TreeGenerator(int maxChilds)
-        {
-            this._maxChilds = maxChilds;
-        }
-
-        public TreeNode<T> CreateTree<T>(int maxDepth, Func<T> valueGenerator)
-        {
-            var node = new TreeNode<T> { Value = valueGenerator() };
-            if (maxDepth > 0)
-            {
-                var childsCount = _rnd.Next(_maxChilds);
-                for (var i = 0; i < childsCount; ++i)
-                    node.Childs.Add(i, CreateTree(maxDepth - 1, valueGenerator));
-            }
-
-            return node;
-        }
-
-        public static TreeNode<long> CreateIntTree()
-        {
-            //NextValue = 
-            //var generator = new TreeGenerator(3 /* max childs count*/);
-            //var tree = generator.CreateTree(4 /*max depth*/, () => NextValue /*node value*/);
-
-            //return tree;
-            return null;
-        }
-
-
     }
 
 

@@ -61,6 +61,7 @@
     <Compile Include="ChefRout.cs" />
     <Compile Include="CHEFSIGN.cs" />
     <Compile Include="ChefSuba.cs" />
+    <Compile Include="CHNGFUNC.cs" />
     <Compile Include="COMPCLUB.cs" />
     <Compile Include="Crush.cs" />
     <Compile Include="DayInTram.cs" />
@@ -89,6 +90,7 @@
     <Compile Include="PSHTTR.cs" />
     <Compile Include="Reflection.cs" />
     <Compile Include="RIDDLE99.cs" />
+    <Compile Include="RMQ.cs" />
     <Compile Include="Solution.cs" />
     <Compile Include="Sort.cs" />
     <Compile Include="StringMadeOf.cs" />

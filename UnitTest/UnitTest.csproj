@@ -54,6 +54,7 @@
     <Compile Include="BigFactorialUnitTest.cs" />
     <Compile Include="CALCTest.cs" />
     <Compile Include="CHEFSIGNTest.cs" />
+    <Compile Include="CHNGFUNCTest.cs" />
     <Compile Include="COMPCLUBUnitTest.cs" />
     <Compile Include="HeapTest.cs" />
     <Compile Include="HRGCDAndSumTest.cs" />

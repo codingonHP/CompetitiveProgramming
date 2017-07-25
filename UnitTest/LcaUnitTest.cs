@@ -26,7 +26,7 @@ namespace UnitTestLcaUnitTest
             OnlyFailed = true,
             OnlyPassed = false,
             IterationCount = 1,
-            SubIterationCount = 1,
+            SubIterationCount = 200,
             MinRandom = 10000,
             MaxRandom = 1000000
         };
@@ -49,13 +49,14 @@ namespace UnitTestLcaUnitTest
 
             for (int k = 0; k < _settings.IterationCount; ++k)
             {
-                for (int i = 0; i < _settings.SubIterationCount; i++)
+                for (var i = _settings.SubIterationCount; i < 100 + _settings.SubIterationCount; i++)
                 {
 
                     try
                     {
-                        n = random.Next(100, 500);
+                        n = (int)i;
 
+                        var intTree = TreeGenerator.CreateIntTree();
                         tree = new LCA.Tree();
                         tree = LCA.Tree.RandomTree(n);
 
@@ -166,6 +167,87 @@ namespace UnitTestLcaUnitTest
                         sb.Append(Environment.NewLine);
                         sb.Append(Environment.NewLine);
                         sb.Append("Tree End");
+
+                        sb.Append($" --> Exception in TEST CASE : Exception : {exception.Message}, {exception.StackTrace}");
+                        sb.Append(Environment.NewLine);
+                    }
+                }
+            }
+
+            sb.Insert(0, $"Total Test cases run = {_totalTestCase}, Passed = {_passed}, Failed = {_falied}");
+            File.WriteAllText("unit-test-input.txt", sb.ToString());
+
+        }
+
+        [TestMethod]
+        public void FValueTest()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append(Environment.NewLine);
+            sb.Append(Environment.NewLine);
+
+            int n = 0;
+
+            for (int k = 0; k < 1; ++k)
+            {
+                for (var i = 0; i < 1000000; i++)
+                {
+
+                    try
+                    {
+                        n = i;
+
+                        var tree = new LCA.Tree();
+                        
+
+                        ++_totalTestCase;
+
+
+                        //TEST CASE RUN
+                        var expected = tree.GetFValue(i);
+                        var got = tree.GetFValue(i);
+
+                        try
+                        {
+                            Assert.AreEqual(expected, got);
+                            ++_passed;
+
+                            if (_settings.ShowAll || _settings.OnlyPassed)
+                            {
+                                sb.Append(Environment.NewLine);
+                                sb.Append($"NEW TEST CASE: N = {n}");
+                                sb.Append(Environment.NewLine);
+                                sb.Append("FValue");
+                                sb.Append($"expected = {expected}, got = {got}");
+                                sb.Append($" --> PASSED TEST CASE");
+                                sb.Append(Environment.NewLine);
+                            }
+
+                        }
+                        catch (Exception e)
+                        {
+                            ++_falied;
+
+                            sb.Append(Environment.NewLine);
+                            sb.Append($"NEW TEST CASE: N = {n}");
+                            sb.Append(Environment.NewLine);
+                            sb.Append("FValue Exception");
+                            sb.Append(Environment.NewLine);
+                            sb.Append($"expected = {expected}, got = {got}");
+                            sb.Append($" --> Failed TEST CASE");
+                            sb.Append(Environment.NewLine);
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        ++_falied;
+
+                        sb.Append(Environment.NewLine);
+                        sb.Append($"NEW TEST CASE: N = {n}");
+                        sb.Append(Environment.NewLine);
+                        sb.Append("MESSAGE");
+                        sb.Append(Environment.NewLine);
 
                         sb.Append($" --> Exception in TEST CASE : Exception : {exception.Message}, {exception.StackTrace}");
                         sb.Append(Environment.NewLine);
