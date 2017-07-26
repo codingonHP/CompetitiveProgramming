@@ -66,6 +66,7 @@
     <Compile Include="COMPCLUB.cs" />
     <Compile Include="Crush.cs" />
     <Compile Include="DayInTram.cs" />
+    <Compile Include="DefaultTemplate.cs" />
     <Compile Include="DynamicArray.cs" />
     <Compile Include="G1.cs" />
     <Compile Include="GridMover.cs" />
@@ -73,6 +74,7 @@
     <Compile Include="Heap.cs" />
     <Compile Include="HHMGN.cs" />
     <Compile Include="HourGlass.cs" />
+    <Compile Include="HRGoodString.cs" />
     <Compile Include="HRMaxGCDAndSum.cs" />
     <Compile Include="HRSameOccurrence.cs" />
     <Compile Include="InfixToPostfix.cs" />

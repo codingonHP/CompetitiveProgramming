@@ -25,8 +25,8 @@ namespace CpForCompetitiveProgrammingLCA
             Console = new ConsoleHelper();
         }
 
-        //public static void Main_Solver(string[] args)
-        public static void Main(string[] args)
+        public static void Main_Solver(string[] args)
+        //public static void Main(string[] args)
         {
 #if DEBUG
             Stopwatch timer = Stopwatch.StartNew();
@@ -64,6 +64,7 @@ namespace CpForCompetitiveProgrammingLCA
             for (int i = 1; i < nodes; i++)
             {
                 var input = Console.NextInts(2);
+          
                 tree.AddNode(input[0], input[1]);
             }
 
@@ -108,7 +109,7 @@ namespace CpForCompetitiveProgrammingLCA
             public readonly Dictionary<long, long> FirstEncounter = new Dictionary<long, long>();
             public readonly Dictionary<long, long> MappingDictionary = new Dictionary<long, long>();
             public Dictionary<long, List<long>> RmqDictionary = new Dictionary<long, List<long>>();
-
+            private long _counter = 0;
 
             public long Query(long n)
             {
@@ -265,7 +266,7 @@ namespace CpForCompetitiveProgrammingLCA
 
                         foreach (var reachableNode in nodea.ReachableNodes)
                         {
-                            if (reachableNode.Value.Parent == null)
+                            if (!reachableNode.Value.IsRoot && reachableNode.Value.Parent == null)
                             {
                                 reachableNode.Value.Parent = nodea;
                             }
@@ -342,7 +343,7 @@ namespace CpForCompetitiveProgrammingLCA
 
             public long RmqQuery(long n)
             {
-                RmqDfs(Root, null, 0);
+                RmqDfs(Root, null);
                 var array = DfsRmq.ToArray();
                 const int inf = (int)1e9;
 
@@ -407,7 +408,7 @@ namespace CpForCompetitiveProgrammingLCA
                 var lcaNode = Nodes[MappingDictionary[lca]];
 
                 Node prevNode = null;
-                while (temp.InternalValue != lcaNode.InternalValue)
+                while (temp != null && temp.InternalValue != lcaNode.InternalValue)
                 {
                     weight += temp.Weight;
                     prevNode = temp;
@@ -425,6 +426,11 @@ namespace CpForCompetitiveProgrammingLCA
 
             private long RmqTravel(Node fromNode, Node toNode, Node prev, long lca, AdvancedDataStructure.SegmentTree<long> segmentTree)
             {
+                if (fromNode == null || toNode == null)
+                {
+                    return 0;
+                }
+
                 long sum = fromNode.Weight;
 
                 foreach (KeyValuePair<long, Node> reachableNode in fromNode.ReachableNodes)
@@ -458,7 +464,7 @@ namespace CpForCompetitiveProgrammingLCA
                 return sum;
             }
 
-            private void RmqDfs(Node node, Node prev, long counter)
+            private void RmqDfs(Node node, Node prev)
             {
                 if (node == null)
                 {
@@ -467,8 +473,8 @@ namespace CpForCompetitiveProgrammingLCA
 
                 if (node.InternalValue == -1)
                 {
-                    node.InternalValue = counter;
-                    FirstEncounter.Add(node.InternalValue, DfsRmq.Count); //exception
+                    node.InternalValue = _counter++;
+                    FirstEncounter.Add(node.InternalValue, DfsRmq.Count);
                     MappingDictionary.Add(node.InternalValue, node.Value);
                 }
 
@@ -483,7 +489,7 @@ namespace CpForCompetitiveProgrammingLCA
                         continue;
                     }
                     
-                    RmqDfs(nextNode, node, ++counter);
+                    RmqDfs(nextNode, node);
 
                     DfsRmq.Add(node.InternalValue);
                 }
@@ -492,7 +498,6 @@ namespace CpForCompetitiveProgrammingLCA
                 {
                     DfsRmq.RemoveAt(DfsRmq.Count - 1);
                 }
-              
             }
 
             private void TravelForDfs(Node node, Node prev, long recSum)

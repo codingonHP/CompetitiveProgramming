@@ -8,13 +8,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
-using CompetitiveProgramming;
 
-namespace CpForCompetitiveProgrammingRMQ
+namespace CpForCompetitiveProgrammingHRGoodString
 {
-    public static class RMQ
+    public static class HRGoodString
     {
         #region Main
 
@@ -22,13 +20,13 @@ namespace CpForCompetitiveProgrammingRMQ
         private const long MaxArrySize = 100000000L;
         private static ConsoleHelper Console { get; set; }
 
-        static RMQ()
+        static HRGoodString()
         {
             Console = new ConsoleHelper();
         }
 
-        public static void Main_Solver(string[] args)
-        //public static void Main(string[] args)
+        //public static void Main_Solver(string[] args)
+        public static void Main(string[] args)
         {
 #if DEBUG
             Stopwatch timer = Stopwatch.StartNew();
@@ -63,206 +61,17 @@ namespace CpForCompetitiveProgrammingRMQ
 
             for (int i = 0; i < tc; i++)
             {
-                var n = Console.NextInt(true);
-                var array = Console.NextLongs(n);
-                var range = Console.NextLongs(2);
 
-                var min = Solve(array, range[0], range[1]);
-                Console.WriteLine(min);
             }
         }
 
 #endif
-        public static long Solve(long[] array, long l, long r)
+        public static void Solve()
         {
-            //SegmentTree tree = new SegmentTree(array, long.MaxValue);
-            //var min = tree.QueryMin(l, r);
-            //return min;
 
-            const int inf = (int)1e9;
-            var segmentTree = new AdvancedDataStructure.SegmentTree<long>(array, inf,
-                    (value, index) => value, (nodeLeft, nodeRight) => Math.Min(nodeLeft.Value, nodeRight.Value));
-
-            var min = segmentTree.Query(l, r, Math.Min, node => node.Value);
-            return min;
-        }
-
-        public static long SolveBf(long[] array, long l, long r)
-        {
-            long min = long.MaxValue;
-            for (var i = l; i <= r; i++)
-            {
-                if (min > array[i])
-                {
-                    min = array[i];
-                }
-            }
-
-            return min;
         }
 
         #endregion
-    }
-
-    public class SegmentTree
-    {
-        public class Node
-        {
-            public long Value { get; set; }
-            public long MinRange { get; set; }
-            public long MaxRange { get; set; }
-            public Node LeftNode { get; set; }
-            public Node RightNode { get; set; }
-        }
-
-        public Dictionary<long, Node> SegmentDictionary { get; } = new Dictionary<long, Node>();
-        public Node Root { get; private set; }
-
-        public long[] Array { get; }
-        public long DefaultValue { get; set; }
-
-        public SegmentTree(long[] array, long defaultValue)
-        {
-            Array = array;
-            DefaultValue = defaultValue;
-            CreateTree();
-        }
-
-        public Node CreateTree()
-        {
-            var baseLength = NextPowerOf2(Array.Length);
-            var totalNodes = Math.Pow(2, Math.Log(baseLength, 2) + 1) - 1;
-            long leftChildIndex = -1, rightChildIndex = -1;
-            long levelLength = baseLength;
-
-            for (int i = 0; i < totalNodes; i++)
-            {
-                for (int j = 0; j < levelLength; j++)
-                {
-
-                    Node left = null, right = null;
-
-                    if (i == baseLength)
-                    {
-                        leftChildIndex = 0;
-                        rightChildIndex = 1;
-                    }
-                    else if (i > baseLength)
-                    {
-                        leftChildIndex += 2;
-                        rightChildIndex += 2;
-                    }
-                    else
-                    {
-                        leftChildIndex = i;
-                        rightChildIndex = i;
-                    }
-
-                    long minreach;
-                    long maxreach;
-                    if (i >= baseLength)
-                    {
-                        left = SegmentDictionary[leftChildIndex];
-                        right = SegmentDictionary[rightChildIndex];
-                        minreach = left.MinRange;
-                        maxreach = right.MaxRange;
-                    }
-                    else
-                    {
-                        minreach = maxreach = i;
-                    }
-
-                    long value = DefaultValue;
-
-                    if (left != null)
-                    {
-                        value = Math.Min(left.Value, right.Value);
-                    }
-                    else if (i < Array.Length)
-                    {
-                        value = Array[i];
-                    }
-
-
-                    Node node = new Node
-                    {
-                        Value = value,
-                        LeftNode = left,
-                        RightNode = right,
-                        MinRange = minreach,
-                        MaxRange = maxreach
-                    };
-
-                    SegmentDictionary.Add(i, node);
-
-                    ++i;
-                }
-
-                levelLength /= 2;
-                --i;
-            }
-
-            Root = SegmentDictionary.Last().Value;
-
-            return Root;
-        }
-
-        private long NextPowerOf2(long n)
-        {
-            var p = Math.Ceiling(Math.Log(n, 2));
-            return (long)Math.Pow(2, p);
-        }
-
-        public long QueryMin(long l, long r)
-        {
-            var node = Root;
-            var min = Travel(node, l, r);
-
-            return min;
-        }
-
-        public long Travel(Node node, long l, long r)
-        {
-            if (node == null)
-            {
-                return DefaultValue;
-            }
-
-            var nodeMinRange = node.MinRange;
-            var nodeMaxRange = node.MaxRange;
-
-            var state = RangeAssessment(l, r, nodeMinRange, nodeMaxRange);
-
-            if (state == -1)
-            {
-                return DefaultValue;
-            }
-
-            if (state == 1)
-            {
-                return node.Value;
-            }
-
-            var lvalue = Travel(node.LeftNode, l, r);
-            var rvalue = Travel(node.RightNode, l, r);
-
-            return Math.Min(lvalue, rvalue);
-        }
-
-        private long RangeAssessment(long l, long r, long nodeMinRange, long nodeMaxRange)
-        {
-            if (nodeMinRange >= l && nodeMaxRange <= r)
-            {
-                return 1; //in range, return from here.
-            }
-
-            if (nodeMaxRange < l || nodeMinRange > r)
-            {
-                return -1; //out of range, ignore.
-            }
-
-            return 0; // go both sides.
-        }
     }
 
 
