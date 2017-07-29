@@ -10,9 +10,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace CpForCompetitiveProgrammingHRGoodString
+namespace CpForCompetitiveProgrammingHRFrudoAndSum
 {
-    public static class HRGoodString
+    public static class HRFrudoAndSum
     {
         #region Main
 
@@ -20,7 +20,7 @@ namespace CpForCompetitiveProgrammingHRGoodString
         private const long MaxArrySize = 100000000L;
         private static ConsoleHelper Console { get; set; }
 
-        static HRGoodString()
+        static HRFrudoAndSum()
         {
             Console = new ConsoleHelper();
         }
@@ -57,79 +57,39 @@ namespace CpForCompetitiveProgrammingHRGoodString
 
         private static void TestCases()
         {
-            var inputString = Console.NextLine();
-            var output = Solve(inputString);
+            int tc = Console.NextInt(true);
 
-            Console.WriteLine(output);
+            for (int i = 0; i < tc; i++)
+            {
+                var n = Console.NextInt(true);
+                var array = Console.NextInts(n);
+                Solve(array.OrderBy(e => e).ToArray());
+            }
         }
 
 #endif
-        public static long Solve(string s)
+        public static void Solve(int[] orderedArray)
         {
-            var maxCount = DnC(s, 0, s.Length - 1);
+            long minSum = 0, maxSum = 0;
+           
+            int j = orderedArray.Length - 1;
+            int k = orderedArray.Length - 1;
 
-            return maxCount;
-        }
-
-
-        private static long DnC(string s, int low, int high)
-        {
-            if (low >= high)
+            for (int i = 0; i < orderedArray.Length / 2; i++)
             {
-                var c = s[low];
-                if (IsVowelChar(c))
-                {
-                    return 1;
-                }
+                long x = orderedArray[j];
+                long y = orderedArray[i];
+                var d = Math.Abs(x - y);
+                maxSum += d;
 
-                return 0;
+                long dm = Math.Abs(orderedArray[k] - orderedArray[k - 1]);
+                minSum += dm;
+
+                --j;
+                k -= 2;
             }
 
-            int mid = (low + high) / 2;
-
-            var leftCount = DnC(s, low, mid);
-            var rightCount = DnC(s, mid + 1, high);
-
-            if (!IsVowelChar(s[mid]))
-            {
-                return Math.Max(leftCount, rightCount);
-            }
-
-            var d = 0;
-            var l = mid;
-            var r = mid + 1;
-
-            while (l >= low)
-            {
-                if (!IsVowelChar(s[l]))
-                {
-                    break;
-                }
-
-                ++d;
-                --l;
-            }
-
-            while (r <= high)
-            {
-                if (!IsVowelChar(s[r]))
-                {
-                    break;
-                }
-
-                ++d;
-                ++r;
-            }
-
-            var maxA = Math.Max(leftCount, d);
-            var max = Math.Max(maxA, rightCount);
-
-            return max;
-        }
-
-        private static bool IsVowelChar(char c)
-        {
-            return c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u';
+            Console.WriteLine(minSum + " " + maxSum);
         }
 
         #endregion
