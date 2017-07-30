@@ -69,6 +69,7 @@
     <Compile Include="PSHTTRTest.cs" />
     <Compile Include="Riddle99UnitTest.cs" />
     <Compile Include="RMQUnitTest.cs" />
+    <Compile Include="SparseTableTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CompetitiveProgramming\CompetitiveProgramming.csproj">
