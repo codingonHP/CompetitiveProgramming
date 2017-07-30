@@ -8,12 +8,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Text;
 
-namespace CpForCompetitiveProgrammingSparseTable
+namespace CpForCompetitiveProgrammingHRDremplayAndUpsideDown
 {
-    public static class SparseTable
+    public static class HRDremplayAndUpsideDown
     {
         #region Main
 
@@ -21,7 +20,7 @@ namespace CpForCompetitiveProgrammingSparseTable
         private const long MaxArrySize = 100000000L;
         private static ConsoleHelper Console { get; set; }
 
-        static SparseTable()
+        static HRDremplayAndUpsideDown()
         {
             Console = new ConsoleHelper();
         }
@@ -58,108 +57,83 @@ namespace CpForCompetitiveProgrammingSparseTable
 
         private static void TestCases()
         {
-            var input = NextInts();
-            var sparseTable = BuildSparseTable(input);
+            var s = Console.NextLine();
+            var output = Solve(s);
 
-            var q = Console.NextInt(true);
-
-            for (int i = 0; i < q; i++)
-            {
-                var indexes = Console.NextInts(2);
-
-                var min = Solve(indexes[0], indexes[1], sparseTable);
-
-                Console.WriteLine(min);
-
-            }
+            Console.WriteLine(output);
         }
 
 #endif
-        public static int Solve(int i, int j, Dictionary<int, Dictionary<int, int>> sparseTable)
+        public static long Solve(string s)
         {
-            var len = j - i + 1;
-            var qlen = PrevPow2(len);
-
-            var row = sparseTable[qlen];
-
-            var a = row[i];
-            var b = row[j - qlen + 1];
-
-            var min = Math.Min(a,b);
-
-            return min;
-        }
-
-        public static Dictionary<int, Dictionary<int, int>> BuildSparseTable(int[] array)
-        {
-            var len = array.Length;
-            var sparseTable = new Dictionary<int, Dictionary<int, int>>();
-
-            var rows = PrevPow2(len);
-
-            for (int i = 1; i <= rows; i *= 2)
+            var reverse = new string(s.Reverse().ToArray());
+            if (s == reverse)
             {
-                var cols = new Dictionary<int, int>();
-                sparseTable.Add(i, cols);
-
-                var l = i / 2;
-
-                if (l == 0)
-                {
-                    for (int j = 0; j < array.Length; j++)
-                    {
-                        cols.Add(j, array[j]);
-                    }
-                }
-                else
-                {
-                    var prev = sparseTable[l];
-
-                    for (int j = 0; j < array.Length; j++)
-                    {
-                        if (j + i <= array.Length)
-                        {
-                            cols.Add(j, Math.Min(prev[j], prev[j + l]));
-                        }
-                        else
-                        {
-                            cols.Add(j, int.MaxValue);
-                        }
-                    }
-                }
-
+                return 0;
             }
 
-            return sparseTable;
+            var len = s.Length;
+            var last = len - 1;
+
+            var replaceCount = PalindromByReplace(s);
+            var minOp = replaceCount;
+
+            for (int i = 0; i <= last; i++)
+            {
+                var subString = s.Substring(i, len - i);
+                var c = PalindromByReplace(subString);
+                c += i;
+
+                if (c < minOp)
+                {
+                    minOp = c;
+                }
+            }
+
+            return minOp;
         }
 
-        private static int PrevPow2(int n)
+        private static long PalindromByReplace(string s)
         {
-            return (int)Math.Pow(2, Math.Floor(Math.Log(n, 2)));
-        }
 
-        private static int[] NextInts()
-        {
-            var input = Console.NextLine();
-            return Array.ConvertAll(input.Split(' '), int.Parse);
+            var reverse = new string(s.Reverse().ToArray());
+            if (s == reverse)
+            {
+                return 0;
+            }
+
+
+            var len = s.Length;
+            var last = len - 1;
+
+            long replaceCount = 0;
+
+            for (int i = 0; len - 3 >= 0 && i <= (len - 3) / 2; i++)
+            {
+                var chl = s[i];
+                var chr = s[last - i];
+
+                if (chl != chr)
+                {
+                    ++replaceCount;
+                }
+            }
+
+            if (len % 2 == 0)
+            {
+                var chl = s[len / 2];
+                var chr = s[last / 2];
+
+                if (chl != chr)
+                {
+                    ++replaceCount;
+                }
+            }
+
+            return replaceCount;
         }
 
         #endregion
-
-        public static int SolveBf(int[] array, int a, int b)
-        {
-            int min = (int) 1e9;
-
-            for (int i = a; i <= b; i++)
-            {
-                if (array[i] < min)
-                {
-                    min = array[i];
-                }
-            }
-
-            return min;
-        }
     }
 
 

@@ -74,6 +74,8 @@
     <Compile Include="Heap.cs" />
     <Compile Include="HHMGN.cs" />
     <Compile Include="HourGlass.cs" />
+    <Compile Include="HRDownloadFile.cs" />
+    <Compile Include="HRDremplayAndUpsideDown.cs" />
     <Compile Include="HRFrudoAndSum.cs" />
     <Compile Include="HRGoodString.cs" />
     <Compile Include="HRMaxGCDAndSum.cs" />

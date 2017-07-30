@@ -8,12 +8,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Text;
 
-namespace CpForCompetitiveProgrammingSparseTable
+namespace CpForCompetitiveProgramming
 {
-    public static class SparseTable
+    public static class HRDownloadFile
     {
         #region Main
 
@@ -21,13 +20,13 @@ namespace CpForCompetitiveProgrammingSparseTable
         private const long MaxArrySize = 100000000L;
         private static ConsoleHelper Console { get; set; }
 
-        static SparseTable()
+        static HRDownloadFile()
         {
             Console = new ConsoleHelper();
         }
 
-        public static void Main_Solver(string[] args)
-        //public static void Main(string[] args)
+        //public static void Main_Solver(string[] args)
+        public static void Main(string[] args)
         {
 #if DEBUG
             Stopwatch timer = Stopwatch.StartNew();
@@ -58,108 +57,21 @@ namespace CpForCompetitiveProgrammingSparseTable
 
         private static void TestCases()
         {
-            var input = NextInts();
-            var sparseTable = BuildSparseTable(input);
+            int tc = Console.NextInt(true);
 
-            var q = Console.NextInt(true);
-
-            for (int i = 0; i < q; i++)
+            for (int i = 0; i < tc; i++)
             {
-                var indexes = Console.NextInts(2);
-
-                var min = Solve(indexes[0], indexes[1], sparseTable);
-
-                Console.WriteLine(min);
 
             }
         }
 
 #endif
-        public static int Solve(int i, int j, Dictionary<int, Dictionary<int, int>> sparseTable)
+        public static void Solve()
         {
-            var len = j - i + 1;
-            var qlen = PrevPow2(len);
 
-            var row = sparseTable[qlen];
-
-            var a = row[i];
-            var b = row[j - qlen + 1];
-
-            var min = Math.Min(a,b);
-
-            return min;
-        }
-
-        public static Dictionary<int, Dictionary<int, int>> BuildSparseTable(int[] array)
-        {
-            var len = array.Length;
-            var sparseTable = new Dictionary<int, Dictionary<int, int>>();
-
-            var rows = PrevPow2(len);
-
-            for (int i = 1; i <= rows; i *= 2)
-            {
-                var cols = new Dictionary<int, int>();
-                sparseTable.Add(i, cols);
-
-                var l = i / 2;
-
-                if (l == 0)
-                {
-                    for (int j = 0; j < array.Length; j++)
-                    {
-                        cols.Add(j, array[j]);
-                    }
-                }
-                else
-                {
-                    var prev = sparseTable[l];
-
-                    for (int j = 0; j < array.Length; j++)
-                    {
-                        if (j + i <= array.Length)
-                        {
-                            cols.Add(j, Math.Min(prev[j], prev[j + l]));
-                        }
-                        else
-                        {
-                            cols.Add(j, int.MaxValue);
-                        }
-                    }
-                }
-
-            }
-
-            return sparseTable;
-        }
-
-        private static int PrevPow2(int n)
-        {
-            return (int)Math.Pow(2, Math.Floor(Math.Log(n, 2)));
-        }
-
-        private static int[] NextInts()
-        {
-            var input = Console.NextLine();
-            return Array.ConvertAll(input.Split(' '), int.Parse);
         }
 
         #endregion
-
-        public static int SolveBf(int[] array, int a, int b)
-        {
-            int min = (int) 1e9;
-
-            for (int i = a; i <= b; i++)
-            {
-                if (array[i] < min)
-                {
-                    min = array[i];
-                }
-            }
-
-            return min;
-        }
     }
 
 

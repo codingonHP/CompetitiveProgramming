@@ -110,7 +110,7 @@ namespace UnitTestLcaUnitTest
                             sb.Append(Environment.NewLine);
                             sb.Append($"NEW TEST CASE: N = {n}");
                             sb.Append(Environment.NewLine);
-                            sb.Append("Tree Exception");
+                            sb.Append("Test Failed");
                             sb.Append(Environment.NewLine);
 
                             foreach (var wval in tree.Nodes)
@@ -144,7 +144,7 @@ namespace UnitTestLcaUnitTest
                         sb.Append(Environment.NewLine);
                         sb.Append($"NEW TEST CASE: N = {n}");
                         sb.Append(Environment.NewLine);
-                        sb.Append("MESSAGE");
+                        sb.Append("Test generated exception");
                         sb.Append(Environment.NewLine);
 
                         foreach (var wval in tree.Nodes)

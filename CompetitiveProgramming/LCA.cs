@@ -64,7 +64,7 @@ namespace CpForCompetitiveProgrammingLCA
             for (int i = 1; i < nodes; i++)
             {
                 var input = Console.NextInts(2);
-          
+
                 tree.AddNode(input[0], input[1]);
             }
 
@@ -77,6 +77,7 @@ namespace CpForCompetitiveProgrammingLCA
             }
 
             var output = tree.RmqQuery(nodes);
+            //var output = tree.QueryBf(nodes);
 
             Console.WriteLine(output);
         }
@@ -109,18 +110,24 @@ namespace CpForCompetitiveProgrammingLCA
             public readonly Dictionary<long, long> FirstEncounter = new Dictionary<long, long>();
             public readonly Dictionary<long, long> MappingDictionary = new Dictionary<long, long>();
             public Dictionary<long, List<long>> RmqDictionary = new Dictionary<long, List<long>>();
-            private long _counter = 0;
+            public Dictionary<long, Dictionary<long, long>> SparseDictionary = new Dictionary<long, Dictionary<long, long>>();
+            private long _counter;
 
-            public long Query(long n)
+            public long RmqQuery(long n)
             {
-                long s = 0;
-                Dfs();
+                RmqDfs(Root, null);
+                var array = DfsRmq.ToArray();
 
-                for (int i = 1; i <= n; i++)
+                FillSparseTable(array);
+
+                long s = 0;
+
+                for (long i = 1; i <= n; i++)
                 {
-                    for (int j = i; j <= n; j++)
+                    for (long j = i; j <= n; j++)
                     {
-                        var lvalue = GetLValue(i, j);
+                        long lvalue = RmqTravel(i, j);
+                        lvalue = GetFValue(lvalue);
 
                         if (i != j)
                         {
@@ -172,31 +179,237 @@ namespace CpForCompetitiveProgrammingLCA
                 return s;
             }
 
-            private long GetLValue(int a, int b)
-            {
-                checked
-                {
-                    var key = string.Format("{0}-{1}", a, b);
 
-                    if (SumDictionary.ContainsKey(key))
+          
+
+           
+
+            private long RmqTravel(long from, long to)
+            {
+                try
+                {
+                    var fromNode = Nodes[from];
+                    var toNode = Nodes[to];
+
+                    if (from == to)
                     {
-                        return GetFValue(SumDictionary[key]);
+                        return fromNode.Weight;
                     }
 
-                    var aKey = string.Format("{0}-{1}", 1, a);
-                    var bKey = string.Format("{0}-{1}", 1, b);
+                    var l = fromNode.InternalValue;
+                    var r = toNode.InternalValue;
+                    Swap(ref l, ref r);
 
-                    var sumA = SumDictionary[aKey];
-                    var sumB = SumDictionary[bKey];
+                    var lca = QuerySparseTable(l, r);
+                    long weight = 0;
 
-                    var lca = Lca(a, b);
+                    var temp = fromNode;
+                    var lcaNode = Nodes[MappingDictionary[lca]];
 
-                    var valueOfLca = SumDictionary[string.Format("{0}-{1}", lca, lca)];
-                    var sumTillLca = SumDictionary[string.Format("{0}-{1}", 1, lca)];
+                    Node prevNode = null;
+                    while (temp != null && temp.InternalValue != lcaNode.InternalValue)
+                    {
+                        weight += temp.Weight;
+                        prevNode = temp;
+                        temp = temp.Parent;
+                    }
 
-                    var sum = sumA - sumTillLca + sumB - sumTillLca + valueOfLca;
+                    weight += RmqTravel(temp, toNode, prevNode, lca);
 
-                    return GetFValue(sum);
+                    return weight;
+                }
+                catch (Exception exception)
+                {
+                    throw;
+                }
+            }
+
+          
+
+            private long RmqTravel(Node fromNode, Node toNode, Node prev, long lca)
+            {
+                try
+                {
+                    if (fromNode == null || toNode == null)
+                    {
+                        return 0;
+                    }
+
+                    long sum = fromNode.Weight;
+
+                    foreach (KeyValuePair<long, Node> reachableNode in fromNode.ReachableNodes)
+                    {
+                        var nextNode = reachableNode.Value;
+
+                        if (nextNode.InternalValue == toNode.InternalValue)
+                        {
+                            return sum + nextNode.Weight;
+                        }
+
+                        if (prev != null && nextNode.Value == prev.Value || fromNode.Parent != null && nextNode.InternalValue == fromNode.Parent.InternalValue)
+                        {
+                            continue;
+                        }
+
+                        var to = toNode.InternalValue;
+                        var nxt = nextNode.InternalValue;
+                        //Swap(ref to, ref nxt);
+
+                        var nextLca = QuerySparseTable(to, nxt);
+
+                        if (nextLca != nxt)
+                        {
+                            continue;
+                        }
+
+                        sum += RmqTravel(nextNode, toNode, fromNode, lca);
+                    }
+
+                    return sum;
+
+                }
+                catch (Exception exception)
+                {
+
+                    throw;
+                }
+            }
+
+            private void RmqDfs(Node node, Node prev)
+            {
+                if (node == null)
+                {
+                    return;
+                }
+
+                if (node.InternalValue == -1)
+                {
+                    node.InternalValue = _counter++;
+                    FirstEncounter.Add(node.InternalValue, DfsRmq.Count);
+                    MappingDictionary.Add(node.InternalValue, node.Value);
+                }
+
+                DfsRmq.Add(node.InternalValue);
+
+                foreach (KeyValuePair<long, Node> reachableNode in node.ReachableNodes)
+                {
+                    var nextNode = reachableNode.Value;
+
+                    if (prev != null && nextNode.Value == prev.Value)
+                    {
+                        continue;
+                    }
+
+                    RmqDfs(nextNode, node);
+
+                    DfsRmq.Add(node.InternalValue);
+                }
+
+                if (node.ReachableNodes.Count > 1)
+                {
+                    DfsRmq.RemoveAt(DfsRmq.Count - 1);
+                }
+            }
+
+            public long GetFValue(long n)
+            {
+
+                if (n <= 0)
+                {
+                    return 1;
+                }
+
+                if (FeDictionary.ContainsKey(n))
+                {
+                    return FeDictionary[n];
+                }
+
+                long k = n / 2;
+                long f;
+
+                if (n % 2 == 0)
+                {
+                    f = (GetFValue(k) * GetFValue(k) + GetFValue(k - 1) * GetFValue(k - 1)) % Mod;
+                    FeDictionary.Add(n, f);
+                    return f;
+                }
+
+                f = (GetFValue(k) * GetFValue(k + 1) + GetFValue(k - 1) * GetFValue(k)) % Mod;
+                FeDictionary.Add(n, f);
+                return f;
+            }
+
+           
+
+            public void FillSparseTable(long[] array)
+            {
+                var len = array.Length;
+                var sdLen = PrevPowerOf2(len);
+
+
+                for (int i = 1; i <= sdLen; i *= 2)
+                {
+                    var col = new Dictionary<long, long>();
+                    SparseDictionary.Add(i, col);
+
+                    var prev = i / 2;
+
+                    if (prev == 0)
+                    {
+                        for (int j = 0; j < array.Length; j++)
+                        {
+                            col.Add(j, array[j]);
+                        }
+                    }
+                    else
+                    {
+                        var prevRow = SparseDictionary[prev];
+                        for (int j = 0; j < array.Length; j++)
+                        {
+                            if (i + j <= array.Length)
+                            {
+                                col.Add(j, Math.Min(prevRow[j], prevRow[j + prev]));
+                            }
+                            else
+                            {
+                                col.Add(j, long.MaxValue);
+                            }
+                        }
+                    }
+                }
+            }
+
+            public long QuerySparseTable(long a, long b)
+            {
+                var fa = FirstEncounter[a];
+                var fb = FirstEncounter[b];
+
+                Swap(ref fa, ref fb);
+
+                long len = fb - fa + 1;
+                len = PrevPowerOf2(len);
+
+                var row = SparseDictionary[len];
+
+                var i = row[fa];
+                var j = row[fb - len + 1];
+
+                return Math.Min(i, j);
+            }
+
+            public long PrevPowerOf2(long n)
+            {
+                var pow = Math.Floor(Math.Log(n, 2));
+                return (long)Math.Pow(2, pow);
+            }
+
+            private void Swap(ref long low, ref long high)
+            {
+                var temp = high;
+                if (low > high)
+                {
+                    high = low;
+                    low = temp;
                 }
             }
 
@@ -279,300 +492,6 @@ namespace CpForCompetitiveProgrammingLCA
                 }
             }
 
-            public long? Lca(int a, int b)
-            {
-                bool found = false;
-                return TraverseForLca(Root, null, a, b, ref found);
-            }
-
-            private long? TraverseForLca(Node node, Node prev, long a, long b, ref bool found)
-            {
-                if (node == null)
-                {
-                    return null;
-                }
-
-                if (node.Value == a)
-                {
-                    return a;
-                }
-
-                if (node.Value == b)
-                {
-                    return b;
-                }
-
-
-                long? f = null;
-
-                foreach (KeyValuePair<long, Node> reachableNode in node.ReachableNodes)
-                {
-                    var n = reachableNode.Value;
-
-                    if (prev != null && n.Value == prev.Value)
-                    {
-                        continue;
-                    }
-
-                    long? lca = TraverseForLca(n, node, a, b, ref found);
-
-                    if (found)
-                    {
-                        return lca;
-                    }
-
-                    if (lca != null && f == null)
-                    {
-                        f = lca;
-                    }
-                    else if (lca != null)
-                    {
-                        found = true;
-                        return node.Value;
-                    }
-                }
-
-                return f;
-            }
-
-            public void Dfs()
-            {
-                TravelForDfs(Root, null, 0);
-            }
-
-
-            public long RmqQuery(long n)
-            {
-                RmqDfs(Root, null);
-                var array = DfsRmq.ToArray();
-                const int inf = (int)1e9;
-
-                var segmentTree = new AdvancedDataStructure.SegmentTree<long>(array, inf,
-                    (value, index) => value, (nodeLeft, nodeRight) => Math.Min(nodeLeft.Value, nodeRight.Value));
-
-                long s = 0;
-
-                for (long i = 1; i <= n; i++)
-                {
-                    for (long j = i; j <= n; j++)
-                    {
-                        var lvalue = RmqTravel(i, j, segmentTree);
-                        lvalue = GetFValue(lvalue);
-
-                        if (i != j)
-                        {
-                            lvalue *= 2;
-                        }
-
-                        s += lvalue;
-
-                        if (s >= Mod)
-                        {
-                            s %= Mod;
-                        }
-
-                    }
-                }
-
-                return s;
-            }
-
-            private void Swap(ref long low, ref long high)
-            {
-                var temp = high;
-                if (low > high)
-                {
-                    high = low;
-                    low = temp;
-                }
-            }
-
-            private long RmqTravel(long from, long to, AdvancedDataStructure.SegmentTree<long> segmentTree)
-            {
-                var fromNode = Nodes[from];
-                var toNode = Nodes[to];
-
-                if (from == to)
-                {
-                    return fromNode.Weight;
-                }
-
-                var l = fromNode.InternalValue;
-                var r = toNode.InternalValue;
-                Swap(ref l, ref r);
-
-                var lca = segmentTree.Query(l, to, Math.Min, node => node.Value);
-                long weight = 0;
-
-                var temp = fromNode;
-                var lcaNode = Nodes[MappingDictionary[lca]];
-
-                Node prevNode = null;
-                while (temp != null && temp.InternalValue != lcaNode.InternalValue)
-                {
-                    weight += temp.Weight;
-                    prevNode = temp;
-                    temp = temp.Parent;
-                }
-
-                //weight += temp.Weight;
-
-               
-
-                weight += RmqTravel(temp, toNode, prevNode, lca, segmentTree);
-
-                return weight;
-            }
-
-            private long RmqTravel(Node fromNode, Node toNode, Node prev, long lca, AdvancedDataStructure.SegmentTree<long> segmentTree)
-            {
-                if (fromNode == null || toNode == null)
-                {
-                    return 0;
-                }
-
-                long sum = fromNode.Weight;
-
-                foreach (KeyValuePair<long, Node> reachableNode in fromNode.ReachableNodes)
-                {
-                    var nextNode = reachableNode.Value;
-
-                    if (nextNode.InternalValue == toNode.InternalValue)
-                    {
-                        return sum + nextNode.Weight;
-                    }
-
-                    if (prev != null && nextNode.Value == prev.Value)
-                    {
-                        continue;
-                    }
-
-                    var l = toNode.InternalValue;
-                    var r = nextNode.InternalValue;
-                    Swap(ref l, ref r);
-
-                    var nextLca = segmentTree.Query(l, r, Math.Min, node => node.Value);
-
-                    if (nextLca == lca)
-                    {
-                        continue;
-                    }
-                   
-                    sum += RmqTravel(nextNode, toNode, fromNode, lca, segmentTree);
-                }
-
-                return sum;
-            }
-
-            private void RmqDfs(Node node, Node prev)
-            {
-                if (node == null)
-                {
-                    return;
-                }
-
-                if (node.InternalValue == -1)
-                {
-                    node.InternalValue = _counter++;
-                    FirstEncounter.Add(node.InternalValue, DfsRmq.Count);
-                    MappingDictionary.Add(node.InternalValue, node.Value);
-                }
-
-                DfsRmq.Add(node.InternalValue);
-
-                foreach (KeyValuePair<long, Node> reachableNode in node.ReachableNodes)
-                {
-                    var nextNode = reachableNode.Value;
-
-                    if (prev != null && nextNode.Value == prev.Value)
-                    {
-                        continue;
-                    }
-                    
-                    RmqDfs(nextNode, node);
-
-                    DfsRmq.Add(node.InternalValue);
-                }
-
-                if (node.ReachableNodes.Count >  1)
-                {
-                    DfsRmq.RemoveAt(DfsRmq.Count - 1);
-                }
-            }
-
-            private void TravelForDfs(Node node, Node prev, long recSum)
-            {
-                if (node == null)
-                {
-                    return;
-                }
-
-                var key = string.Format("{0}-{1}", 1, node.Value);
-                var iKey = string.Format("{0}-{1}", node.Value, node.Value);
-
-                var weight = node.Weight;
-
-                if (!SumDictionary.ContainsKey(iKey))
-                {
-                    SumDictionary.Add(iKey, weight);
-                }
-
-                checked
-                {
-                    weight = recSum + node.Weight;
-                }
-
-                foreach (KeyValuePair<long, Node> reachableNode in node.ReachableNodes)
-                {
-                    var n = reachableNode.Value;
-
-                    if (prev != null && n.Value == prev.Value)
-                    {
-                        if (!SumDictionary.ContainsKey(key))
-                        {
-                            SumDictionary.Add(key, weight);
-                        }
-
-                        continue;
-                    }
-
-                    if (!SumDictionary.ContainsKey(key))
-                    {
-                        SumDictionary.Add(key, weight);
-                    }
-
-                    TravelForDfs(n, node, weight);
-                }
-            }
-
-            public long GetFValue(long n)
-            {
-
-                if (n <= 0)
-                {
-                    return 1;
-                }
-
-                if (FeDictionary.ContainsKey(n))
-                {
-                    return FeDictionary[n];
-                }
-
-                long k = n / 2;
-                long f;
-
-                if (n % 2 == 0)
-                {
-                    f = (GetFValue(k) * GetFValue(k) + GetFValue(k - 1) * GetFValue(k - 1)) % Mod;
-                    FeDictionary.Add(n, f);
-                    return f;
-                }
-
-                f = (GetFValue(k) * GetFValue(k + 1) + GetFValue(k - 1) * GetFValue(k)) % Mod;
-                FeDictionary.Add(n, f);
-                return f;
-            }
-
             public static Tree RandomTree(long nodeCount)
             {
                 Queue<long> nodeQueue = new Queue<long>();
@@ -638,19 +557,6 @@ namespace CpForCompetitiveProgrammingLCA
                 {
                     stack.Pop();
                 }
-            }
-
-            public void FillSparseTable(long[] array)
-            {
-                var len = 1;
-
-
-            }
-
-            public long PrevPowerOf2(long n)
-            {
-                var pow = Math.Floor(Math.Log(n, 2));
-                return (long)Math.Pow(2, pow);
             }
 
         }
@@ -1455,358 +1361,11 @@ namespace CpForCompetitiveProgrammingLCA
         }
         #endregion
 
-        #region Number extensions
-
-        public static bool IsPair(this int n)
-        {
-            return (n & 1) == 0;
-        }
-
-
-        public static bool IsPair(this long n)
-        {
-            return (n & 1L) == 0;
-        }
-
-
-        public static int Mod(this int n, int m)
-        {
-            return ((n % m) + m) % m;
-        }
-
-
-        public static long Mod(this long n, long m)
-        {
-            return ((n % m) + m) % m;
-        }
-
-
-        public static int Triangle(this int n)
-        {
-            return (n * (n + 1)) / 2;
-        }
-
-
-        public static long Triangle(this long n)
-        {
-            return (n * (n + 1L)) / 2L;
-        }
-
-        /// <summary>
-        /// Counts the amount of set bits (1s in the binary representation) of a given integer
-        /// </summary>
-        /// <param name="n">Integer to get the set bits from</param>
-        /// <returns>Amount of set bits of the integer</returns>
-        public static int SetBits(this int n)
-        {
-            n = n - ((n >> 1) & 0x55555555);
-            n = (n & 0x33333333) + ((n >> 2) & 0x33333333);
-            return (((n + (n >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-        }
-
-        /// <summary>
-        /// Counts the amount of set bits (1s in the binary representation) of a given long
-        /// </summary>
-        /// <param name="n">Long to get the set bits from</param>
-        /// <returns>Amount of set bits of the long</returns>
-        public static long SetBits(this long n)
-        {
-            n = n - ((n >> 1) & 0x5555555555555555);
-            n = (n & 0x3333333333333333) + ((n >> 2) & 0x3333333333333333);
-            return (((n + (n >> 4)) & 0xF0F0F0F0F0F0F0F) * 0x101010101010101) >> 56;
-        }
-
-
-        public static int SumDigits(this int n)
-        {
-            int total = 0;
-            while (n > 0)
-            {
-                total += n % 10;
-                n /= 10;
-            }
-            return total;
-        }
-        #endregion
-
-        private static void Swap(long[] arr, int i, int j)
-        {
-            var t = arr[i];
-            arr[i] = arr[j];
-            arr[j] = t;
-        }
-
-        private static int Partition(long[] arr, int l, int h, bool asc)
-        {
-            var x = arr[h];
-            int i = (l - 1);
-
-            for (int j = l; j <= h - 1; j++)
-            {
-                if (arr[j] <= x)
-                {
-                    i++;
-
-                    if (asc)
-                    {
-                        Swap(arr, i, j);
-                    }
-                    else
-                    {
-                        Swap(arr, j, i);
-                    }
-
-                }
-            }
-
-            if (asc)
-            {
-                Swap(arr, i + 1, h);
-            }
-            else
-            {
-                Swap(arr, h, i + 1);
-            }
-
-            return (i + 1);
-        }
-
-        public static void QuickSort(this long[] arr, bool asc)
-        {
-            int l = 0;
-            int h = arr.Length - 1;
-
-            // create auxiliary stack
-            int[] stack = new int[h - l + 1];
-
-            // initialize top of stack
-            int top = -1;
-
-            // push initial values in the stack
-            stack[++top] = l;
-            stack[++top] = h;
-
-            // keep popping elements until stack is not empty
-            while (top >= 0)
-            {
-                // pop h and l
-                h = stack[top--];
-                l = stack[top--];
-
-                // set pivot element at it's proper position
-                int p = Partition(arr, l, h, asc);
-
-                // If there are elements on left side of pivot,
-                // then push left side to stack
-                if (p - 1 > l)
-                {
-                    stack[++top] = l;
-                    stack[++top] = p - 1;
-                }
-
-                // If there are elements on right side of pivot,
-                // then push right side to stack
-                if (p + 1 < h)
-                {
-                    stack[++top] = p + 1;
-                    stack[++top] = h;
-                }
-            }
-        }
-
-        public static int BinarySearch(long[] a, long key)
-        {
-            int low = 0, high = a.Length - 1;
-            while (low <= high)
-            {
-                int mid = (low + high) / 2;
-                if (a[mid] == key)
-                {
-                    high = mid;
-                    break;
-                }
-                else if (a[mid] < key)
-                    low = mid + 1;
-                else
-                    high = mid - 1;
-            }
-
-            if (high == a.Length - 1)
-                return high;
-            while ((high + 1 < a.Length) && a[high + 1] == key)
-                high++;
-            return high;
-
-        }
+        
+      
     }
 
-    public static class AdvancedDataStructure
-    {
-        public class SegmentTree<T>
-        {
-
-            public class SegmentTreeNode
-            {
-                public T Value { get; set; }
-                public long MinRange { get; set; }
-                public long MaxRange { get; set; }
-                public SegmentTreeNode LeftNode { get; set; }
-                public SegmentTreeNode RightNode { get; set; }
-            }
-
-            public Dictionary<long, SegmentTreeNode> SegmentDictionary { get; } = new Dictionary<long, SegmentTreeNode>();
-            public SegmentTreeNode Root { get; private set; }
-            public T[] Array { get; }
-            public T DefaultValue { get; set; }
-
-            public Func<T, long, T> BaseValueProvider { get; }
-            public Func<SegmentTreeNode, SegmentTreeNode, T> LevelValueProvider { get; }
-
-            public SegmentTree(T[] array, T defaultValue, Func<T, long, T> baseValueProvider, Func<SegmentTreeNode, SegmentTreeNode, T> levelValueProvider)
-            {
-                Array = array;
-                DefaultValue = defaultValue;
-                BaseValueProvider = baseValueProvider;
-                LevelValueProvider = levelValueProvider;
-                CreateTree(baseValueProvider, levelValueProvider);
-            }
-
-            public T Query(long l, long r, Func<T, T, T> queryFunc, Func<SegmentTreeNode, T> inRangeValueProvider)
-            {
-                var node = Root;
-                var value = Travel(node, l, r, queryFunc, inRangeValueProvider);
-
-                return value;
-            }
-
-            private void CreateTree(Func<T, long, T> baseValueProvider, Func<SegmentTreeNode, SegmentTreeNode, T> levelValueProvider)
-            {
-                var baseLength = NextPowerOf2(Array.Length);
-                var totalNodes = Math.Pow(2, Math.Log(baseLength, 2) + 1) - 1;
-                long leftChildIndex = -1, rightChildIndex = -1;
-                long levelLength = baseLength;
-
-                for (int i = 0; i < totalNodes; i++)
-                {
-                    for (int j = 0; j < levelLength; j++)
-                    {
-
-                        SegmentTreeNode left = null, right = null;
-
-                        if (i == baseLength)
-                        {
-                            leftChildIndex = 0;
-                            rightChildIndex = 1;
-                        }
-                        else if (i > baseLength)
-                        {
-                            leftChildIndex += 2;
-                            rightChildIndex += 2;
-                        }
-                        else
-                        {
-                            leftChildIndex = i;
-                            rightChildIndex = i;
-                        }
-
-                        long minreach;
-                        long maxreach;
-                        if (i >= baseLength)
-                        {
-                            left = SegmentDictionary[leftChildIndex];
-                            right = SegmentDictionary[rightChildIndex];
-                            minreach = left.MinRange;
-                            maxreach = right.MaxRange;
-                        }
-                        else
-                        {
-                            minreach = maxreach = i;
-                        }
-
-                        T value = DefaultValue;
-
-                        if (left != null)
-                        {
-                            value = levelValueProvider(left, right);
-                        }
-                        else if (i < Array.Length)
-                        {
-                            value = baseValueProvider(Array[i], i);
-                        }
-
-
-                        SegmentTreeNode node = new SegmentTreeNode
-                        {
-                            Value = value,
-                            LeftNode = left,
-                            RightNode = right,
-                            MinRange = minreach,
-                            MaxRange = maxreach
-                        };
-
-                        SegmentDictionary.Add(i, node);
-
-                        ++i;
-                    }
-
-                    levelLength /= 2;
-                    --i;
-                }
-
-                Root = SegmentDictionary.Last().Value;
-            }
-
-            private T Travel(SegmentTreeNode node, long l, long r, Func<T, T, T> queryFunc, Func<SegmentTreeNode, T> inRangeFun)
-            {
-                if (node == null)
-                {
-                    return DefaultValue;
-                }
-
-                var nodeMinRange = node.MinRange;
-                var nodeMaxRange = node.MaxRange;
-
-                var state = RangeAssessment(l, r, nodeMinRange, nodeMaxRange);
-
-                if (state == -1)
-                {
-                    return DefaultValue;
-                }
-
-                if (state == 1)
-                {
-                    return inRangeFun(node);
-                }
-
-                var lvalue = Travel(node.LeftNode, l, r, queryFunc, inRangeFun);
-                var rvalue = Travel(node.RightNode, l, r, queryFunc, inRangeFun);
-
-                return queryFunc(lvalue, rvalue);
-            }
-
-            private long RangeAssessment(long l, long r, long nodeMinRange, long nodeMaxRange)
-            {
-                if (nodeMinRange >= l && nodeMaxRange <= r)
-                {
-                    return 1; //in range, return from here.
-                }
-
-                if (nodeMaxRange < l || nodeMinRange > r)
-                {
-                    return -1; //out of range, ignore.
-                }
-
-                return 0; // go both sides.
-            }
-
-            private long NextPowerOf2(long n)
-            {
-                var p = Math.Ceiling(Math.Log(n, 2));
-                return (long)Math.Pow(2, p);
-            }
-        }
-
-    }
+   
 
     #endregion
 
