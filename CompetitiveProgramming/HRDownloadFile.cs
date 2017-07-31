@@ -8,9 +8,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Configuration;
 using System.Text;
 
-namespace CpForCompetitiveProgramming
+namespace CpForCompetitiveProgrammingHRDownloadFile
 {
     public static class HRDownloadFile
     {
@@ -57,18 +58,95 @@ namespace CpForCompetitiveProgramming
 
         private static void TestCases()
         {
-            int tc = Console.NextInt(true);
+            var tc = Console.NextInts(2);
+            var n = tc[0];
+            var ds = tc[1];
 
-            for (int i = 0; i < tc; i++)
-            {
+            var matrix = Console.NextMatrix(n, 2);
 
-            }
+            var output = Solve(matrix, n, ds);
+
+            Console.WriteLine(output);
+
         }
 
 #endif
-        public static void Solve()
+        public static string Solve(int[,] matrix, int n, int fileSize)
         {
+            decimal maxAvg = (int)-1e9 - 1;
+            int ri = 0, rj = 0;
 
+            for (int i = 0; i < n - 1; i++)
+            {
+                for (int j = i + 1; j < n; j++)
+                {
+                    var avg = RangeSum(matrix, i, j) / (decimal)(j - i + 1);
+                    if (maxAvg < avg)
+                    {
+                        maxAvg = avg;
+                        ri = i;
+                        rj = j;
+                    }
+                }
+            }
+
+            var ts = matrix[ri, 0];
+            var te = matrix[rj, 0];
+
+            var elapsedTime = te - ts + 1;
+            var dt = (fileSize) / (decimal)maxAvg;
+
+            var rem = fileSize;
+            var timeElapsed = 0;
+
+
+            for (int i = ri; i < n; i++)
+            {
+                var ts1 = matrix[i, 0];
+                var ds1 = matrix[i, 1];
+
+                while (rem > 0)
+                {
+                    if (i + 1 >= n)
+                    {
+                        break;
+                    }
+
+                    var te1 = matrix[i + 1, 1];
+                    var telapsed = te1 - ts1;
+                    var maxDownload = (te1 - ts1) * ds1;
+
+                    if (rem - maxDownload >= 0)
+                    {
+                        rem = rem - maxDownload;
+                        timeElapsed += telapsed;
+                    }
+                    else
+                    {
+                       
+                    }
+                }
+            }
+
+
+
+            return ConvertToFraction(dt);
+        }
+
+        private static string ConvertToFraction(decimal dt)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static long RangeSum(int[,] matrix, int from, int to)
+        {
+            long sum = 0;
+            for (int i = from; i <= to; i++)
+            {
+                sum += matrix[i, 1];
+            }
+
+            return sum;
         }
 
         #endregion
