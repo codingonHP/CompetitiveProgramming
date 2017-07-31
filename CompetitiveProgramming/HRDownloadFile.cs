@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Configuration;
 using System.Text;
 
 namespace CpForCompetitiveProgrammingHRDownloadFile
@@ -73,81 +72,167 @@ namespace CpForCompetitiveProgrammingHRDownloadFile
 #endif
         public static string Solve(int[,] matrix, int n, int fileSize)
         {
-            decimal maxAvg = (int)-1e9 - 1;
-            int ri = 0, rj = 0;
+            decimal mindownloadTime = (int)1e9;
+            Fraction minFraction = null;
+
+            var memory = PopulateMemory(matrix, n);
+
+            for (int i = n - 1; i >= 0; i--)
+            {
+                var time = matrix[i, 0];
+
+                var downloadTimeFraction = TimeTakenToDownload(matrix, time, fileSize, memory);
+
+                decimal downloadTime;
+                if (downloadTimeFraction.Denominator == 0)
+                {
+                    downloadTime = downloadTimeFraction.PureValue;
+                }
+                else
+                {
+                    downloadTime = downloadTimeFraction.PureValue +
+                                   downloadTimeFraction.Numerator / (decimal)downloadTimeFraction.Denominator;
+                }
+
+
+                if (downloadTime < mindownloadTime)
+                {
+                    mindownloadTime = downloadTime;
+                    minFraction = downloadTimeFraction;
+                }
+            }
+
+            var fn = minFraction.PureValue * minFraction.Denominator + minFraction.Numerator;
+            var fd = minFraction.Denominator;
+
+            var gcd = Gcd(fn, fd);
+
+            fn /= gcd;
+            fd /= gcd;
+
+            return string.Format("{0}/{1}", fn, fd);
+
+        }
+
+        public class Fraction
+        {
+            public long Numerator { get; set; }
+            public long Denominator { get; set; }
+            public long PureValue { get; set; }
+
+            public Fraction(long numerator, long denominator)
+            {
+                Numerator = numerator;
+                Denominator = denominator;
+            }
+
+            public Fraction()
+            {
+
+            }
+        }
+
+        public class Memory
+        {
+            public long MaxDownloadSize { get; set; }
+            public long BaseDownloadSize { get; set; }
+            public long Index { get; set; }
+            public long TimeDuration { get; set; }
+            public long StartTime { get; set; }
+        }
+
+        private static Dictionary<long, Memory> PopulateMemory(int[,] matrix, int n)
+        {
+            var memoryDictionary = new Dictionary<long, Memory>();
 
             for (int i = 0; i < n - 1; i++)
             {
-                for (int j = i + 1; j < n; j++)
+                var weight = matrix[i, 1];
+                var time = matrix[i, 0];
+                var nextTime = matrix[i + 1, 0];
+
+                var memory = new Memory
                 {
-                    var avg = RangeSum(matrix, i, j) / (decimal)(j - i + 1);
-                    if (maxAvg < avg)
-                    {
-                        maxAvg = avg;
-                        ri = i;
-                        rj = j;
-                    }
-                }
+                    BaseDownloadSize = weight,
+                    MaxDownloadSize = (nextTime - time) * weight,
+                    Index = i,
+                    TimeDuration = nextTime - time,
+                    StartTime = time
+                };
+
+                memoryDictionary.Add(time, memory);
             }
 
-            var ts = matrix[ri, 0];
-            var te = matrix[rj, 0];
-
-            var elapsedTime = te - ts + 1;
-            var dt = (fileSize) / (decimal)maxAvg;
-
-            var rem = fileSize;
-            var timeElapsed = 0;
-
-
-            for (int i = ri; i < n; i++)
+            var lastMemory = new Memory
             {
-                var ts1 = matrix[i, 0];
-                var ds1 = matrix[i, 1];
+                BaseDownloadSize = matrix[n - 1, 1],
+                MaxDownloadSize = -1,
+                Index = n - 1,
+                TimeDuration = -1,
+                StartTime = matrix[n - 1, 0]
+            };
 
-                while (rem > 0)
+            memoryDictionary.Add(matrix[n - 1, 0], lastMemory);
+
+            return memoryDictionary;
+        }
+
+        public static Fraction TimeTakenToDownload(int[,] matrix, int time, long leftDownload, Dictionary<long, Memory> memory)
+        {
+            var downloadInfo = memory[time];
+            Fraction value = new Fraction();
+
+            if (downloadInfo.MaxDownloadSize == -1)
+            {
+                return new Fraction
                 {
-                    if (i + 1 >= n)
-                    {
-                        break;
-                    }
-
-                    var te1 = matrix[i + 1, 1];
-                    var telapsed = te1 - ts1;
-                    var maxDownload = (te1 - ts1) * ds1;
-
-                    if (rem - maxDownload >= 0)
-                    {
-                        rem = rem - maxDownload;
-                        timeElapsed += telapsed;
-                    }
-                    else
-                    {
-                       
-                    }
-                }
+                    Numerator = leftDownload,
+                    Denominator = downloadInfo.BaseDownloadSize
+                };
             }
 
+            var rem = leftDownload - downloadInfo.MaxDownloadSize;
 
 
-            return ConvertToFraction(dt);
-        }
-
-        private static string ConvertToFraction(decimal dt)
-        {
-            throw new NotImplementedException();
-        }
-
-        private static long RangeSum(int[,] matrix, int from, int to)
-        {
-            long sum = 0;
-            for (int i = from; i <= to; i++)
+            if (rem == 0)
             {
-                sum += matrix[i, 1];
+                return new Fraction
+                {
+                    PureValue = downloadInfo.TimeDuration
+                };
             }
 
-            return sum;
+            if (rem > 0)
+            {
+                var totalTime = downloadInfo.TimeDuration;
+                var timetaken = TimeTakenToDownload(matrix, matrix[downloadInfo.Index + 1, 0], rem, memory);
+
+                timetaken.PureValue += totalTime;
+                value = timetaken;
+            }
+            else
+            {
+                var numerator = leftDownload % downloadInfo.MaxDownloadSize;
+                var denominator = downloadInfo.BaseDownloadSize;
+
+                var gcd = Gcd(numerator, denominator);
+                value.Numerator = numerator / gcd;
+                value.Denominator = denominator / gcd;
+            }
+
+            return value;
         }
+
+        public static long Gcd(long a, long b)
+        {
+            if (a == 0)
+            {
+                return b;
+            }
+
+            return Gcd(b % a, a);
+        }
+
 
         #endregion
     }
