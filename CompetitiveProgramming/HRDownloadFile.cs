@@ -16,8 +16,6 @@ namespace CpForCompetitiveProgrammingHRDownloadFile
     {
         #region Main
 
-        private const long Mod = 1000000007L;
-        private const long MaxArrySize = 100000000L;
         private static ConsoleHelper Console { get; set; }
 
         static HRDownloadFile()
@@ -55,27 +53,112 @@ namespace CpForCompetitiveProgrammingHRDownloadFile
 
 #if TESTCASES
 
+
         private static void TestCases()
         {
+            Dictionary<long, List<int>> mappingSpeedToTime = new Dictionary<long, List<int>>();
+
             var tc = Console.NextInts(2);
             var n = tc[0];
             var ds = tc[1];
 
             var matrix = Console.NextMatrix(n, 2);
+            var memory = PopulateMemory(matrix, n);
 
-            var output = Solve(matrix, n, ds);
+            //for (int i = 0; i < n; i++)
+            //{
+            //    var key = matrix[i, 1];
+            //    var t = matrix[i, 0];
 
-            Console.WriteLine(output);
+            //    if (mappingSpeedToTime.ContainsKey(key))
+            //    {
+            //        var occuranceList = mappingSpeedToTime[key];
+            //        occuranceList.Add(t);
+            //    }
+            //    else
+            //    {
+            //        mappingSpeedToTime.Add(key, new List<int> { t });
+            //    }
+            //}
+
+
+
+            //List<long> list = new List<long>();
+            //foreach (var memoryValue in memory.Values)
+            //{
+            //    for (int i = 0; i < memoryValue.TimeDuration; i++)
+            //    {
+            //        list.Add(memoryValue.BaseDownloadSpeed);
+            //    }
+            //}
+
+            //var array = list.ToArray();
+
+            //var segmentTree = new AdvancedDataStructure.SegmentTree<long>(array, matrix[n - 1, 1],
+            //    (value, index) => value, (nodeLeft, nodeRight) => nodeLeft.Value + nodeRight.Value);
+
+
+            //var node = Traverse(segmentTree.Root);
+
+
+            //var time = mappingSpeedToTime[node.Value].First(o => o <= node.MinRange);
+            //var output1 = SolveFast(matrix, n, ds, memory, time);
+
+            //Console.WriteLine(output1);
+
+            var expected = Solve(matrix, n, ds, memory);
+            Console.WriteLine(expected);
 
         }
 
 #endif
-        public static string Solve(int[,] matrix, int n, int fileSize)
-        {
-            decimal mindownloadTime = (int)1e9;
-            Fraction minFraction = null;
 
-            var memory = PopulateMemory(matrix, n);
+        public static string SolveFast(int[,] matrix, int n, int fileSize, Dictionary<long, Memory> memory, int time)
+        {
+            var downloadTimeFraction = TimeTakenToDownload(matrix, time, fileSize, memory);
+
+            var fn = downloadTimeFraction.PureValue * downloadTimeFraction.Denominator + downloadTimeFraction.Numerator;
+            var fd = downloadTimeFraction.Denominator;
+
+            var gcd = Gcd(fn, fd);
+
+            fn /= gcd;
+            fd /= gcd;
+
+            return string.Format("{0}/{1}", fn, fd);
+
+        }
+
+        private static AdvancedDataStructure.SegmentTree<long>.SegmentTreeNode Traverse(AdvancedDataStructure.SegmentTree<long>.SegmentTreeNode node)
+        {
+            if (node.RightNode.RightNode == null)
+            {
+                var max = Math.Max(node.LeftNode.Value, node.RightNode.Value);
+
+                if (max == node.RightNode.Value)
+                {
+                    return node.RightNode;
+                }
+
+                return node.LeftNode;
+            }
+
+            if (node.RightNode.Value >= node.LeftNode.Value)
+            {
+                return Traverse(node.RightNode);
+            }
+
+            return Traverse(node.LeftNode);
+        }
+
+
+
+        #region OldSolution
+
+        public static string Solve(int[,] matrix, int n, int fileSize, Dictionary<long, Memory> memory)
+        {
+            decimal mindownloadTime = (long)1e18;
+            Fraction minFraction = null;
 
             for (int i = n - 1; i >= 0; i--)
             {
@@ -135,10 +218,11 @@ namespace CpForCompetitiveProgrammingHRDownloadFile
         public class Memory
         {
             public long MaxDownloadSize { get; set; }
-            public long BaseDownloadSize { get; set; }
+            public long BaseDownloadSpeed { get; set; }
             public long Index { get; set; }
             public long TimeDuration { get; set; }
             public long StartTime { get; set; }
+            public bool Last { get; set; }
         }
 
         private static Dictionary<long, Memory> PopulateMemory(int[,] matrix, int n)
@@ -153,7 +237,7 @@ namespace CpForCompetitiveProgrammingHRDownloadFile
 
                 var memory = new Memory
                 {
-                    BaseDownloadSize = weight,
+                    BaseDownloadSpeed = weight,
                     MaxDownloadSize = (nextTime - time) * weight,
                     Index = i,
                     TimeDuration = nextTime - time,
@@ -161,15 +245,18 @@ namespace CpForCompetitiveProgrammingHRDownloadFile
                 };
 
                 memoryDictionary.Add(time, memory);
+
+
             }
 
             var lastMemory = new Memory
             {
-                BaseDownloadSize = matrix[n - 1, 1],
-                MaxDownloadSize = -1,
+                BaseDownloadSpeed = matrix[n - 1, 1],
+                MaxDownloadSize = matrix[n - 1, 1],
                 Index = n - 1,
-                TimeDuration = -1,
-                StartTime = matrix[n - 1, 0]
+                TimeDuration = 1,
+                StartTime = matrix[n - 1, 0],
+                Last = true
             };
 
             memoryDictionary.Add(matrix[n - 1, 0], lastMemory);
@@ -182,12 +269,12 @@ namespace CpForCompetitiveProgrammingHRDownloadFile
             var downloadInfo = memory[time];
             Fraction value = new Fraction();
 
-            if (downloadInfo.MaxDownloadSize == -1)
+            if (downloadInfo.Last)
             {
                 return new Fraction
                 {
                     Numerator = leftDownload,
-                    Denominator = downloadInfo.BaseDownloadSize
+                    Denominator = downloadInfo.BaseDownloadSpeed
                 };
             }
 
@@ -212,8 +299,11 @@ namespace CpForCompetitiveProgrammingHRDownloadFile
             }
             else
             {
-                var numerator = leftDownload % downloadInfo.MaxDownloadSize;
-                var denominator = downloadInfo.BaseDownloadSize;
+                //var numerator = leftDownload % downloadInfo.MaxDownloadSize;
+                //var denominator = downloadInfo.BaseDownloadSpeed;
+
+                var numerator = downloadInfo.TimeDuration * leftDownload;
+                var denominator = downloadInfo.MaxDownloadSize;
 
                 var gcd = Gcd(numerator, denominator);
                 value.Numerator = numerator / gcd;
@@ -235,6 +325,177 @@ namespace CpForCompetitiveProgrammingHRDownloadFile
 
 
         #endregion
+
+
+        #endregion
+    }
+
+    public static class AdvancedDataStructure
+    {
+        public class SegmentTree<T>
+        {
+
+            public class SegmentTreeNode
+            {
+                public T Value { get; set; }
+                public long MinRange { get; set; }
+                public long MaxRange { get; set; }
+                public SegmentTreeNode LeftNode { get; set; }
+                public SegmentTreeNode RightNode { get; set; }
+            }
+
+            public Dictionary<long, SegmentTreeNode> SegmentDictionary { get; } = new Dictionary<long, SegmentTreeNode>();
+            public SegmentTreeNode Root { get; private set; }
+            public T[] Array { get; }
+            public T DefaultValue { get; set; }
+
+            public Func<T, long, T> BaseValueProvider { get; }
+            public Func<SegmentTreeNode, SegmentTreeNode, T> LevelValueProvider { get; }
+
+            public SegmentTree(T[] array, T defaultValue, Func<T, long, T> baseValueProvider, Func<SegmentTreeNode, SegmentTreeNode, T> levelValueProvider)
+            {
+                Array = array;
+                DefaultValue = defaultValue;
+                BaseValueProvider = baseValueProvider;
+                LevelValueProvider = levelValueProvider;
+                CreateTree(baseValueProvider, levelValueProvider);
+            }
+
+            public T Query(long l, long r, Func<T, T, T> queryFunc, Func<SegmentTreeNode, T> inRangeValueProvider)
+            {
+                var node = Root;
+                var value = Travel(node, l, r, queryFunc, inRangeValueProvider);
+
+                return value;
+            }
+
+            private void CreateTree(Func<T, long, T> baseValueProvider, Func<SegmentTreeNode, SegmentTreeNode, T> levelValueProvider)
+            {
+                var baseLength = NextPowerOf2(Array.Length);
+                var totalNodes = Math.Pow(2, Math.Log(baseLength, 2) + 1) - 1;
+                long leftChildIndex = -1, rightChildIndex = -1;
+                long levelLength = baseLength;
+
+                for (int i = 0; i < totalNodes; i++)
+                {
+                    for (int j = 0; j < levelLength; j++)
+                    {
+
+                        SegmentTreeNode left = null, right = null;
+
+                        if (i == baseLength)
+                        {
+                            leftChildIndex = 0;
+                            rightChildIndex = 1;
+                        }
+                        else if (i > baseLength)
+                        {
+                            leftChildIndex += 2;
+                            rightChildIndex += 2;
+                        }
+                        else
+                        {
+                            leftChildIndex = i;
+                            rightChildIndex = i;
+                        }
+
+                        long minreach;
+                        long maxreach;
+                        if (i >= baseLength)
+                        {
+                            left = SegmentDictionary[leftChildIndex];
+                            right = SegmentDictionary[rightChildIndex];
+                            minreach = left.MinRange;
+                            maxreach = right.MaxRange;
+                        }
+                        else
+                        {
+                            minreach = maxreach = i;
+                        }
+
+                        T value = DefaultValue;
+
+                        if (left != null)
+                        {
+                            value = levelValueProvider(left, right);
+                        }
+                        else if (i < Array.Length)
+                        {
+                            value = baseValueProvider(Array[i], i);
+                        }
+
+
+                        SegmentTreeNode node = new SegmentTreeNode
+                        {
+                            Value = value,
+                            LeftNode = left,
+                            RightNode = right,
+                            MinRange = minreach,
+                            MaxRange = maxreach
+                        };
+
+                        SegmentDictionary.Add(i, node);
+
+                        ++i;
+                    }
+
+                    levelLength /= 2;
+                    --i;
+                }
+
+                Root = SegmentDictionary.Last().Value;
+            }
+
+            private T Travel(SegmentTreeNode node, long l, long r, Func<T, T, T> queryFunc, Func<SegmentTreeNode, T> inRangeFun)
+            {
+                if (node == null)
+                {
+                    return DefaultValue;
+                }
+
+                var nodeMinRange = node.MinRange;
+                var nodeMaxRange = node.MaxRange;
+
+                var state = RangeAssessment(l, r, nodeMinRange, nodeMaxRange);
+
+                if (state == -1)
+                {
+                    return DefaultValue;
+                }
+
+                if (state == 1)
+                {
+                    return inRangeFun(node);
+                }
+
+                var lvalue = Travel(node.LeftNode, l, r, queryFunc, inRangeFun);
+                var rvalue = Travel(node.RightNode, l, r, queryFunc, inRangeFun);
+
+                return queryFunc(lvalue, rvalue);
+            }
+
+            private long RangeAssessment(long l, long r, long nodeMinRange, long nodeMaxRange)
+            {
+                if (nodeMinRange >= l && nodeMaxRange <= r)
+                {
+                    return 1; //in range, return from here.
+                }
+
+                if (nodeMaxRange < l || nodeMinRange > r)
+                {
+                    return -1; //out of range, ignore.
+                }
+
+                return 0; // go both sides.
+            }
+
+            private long NextPowerOf2(long n)
+            {
+                var p = Math.Ceiling(Math.Log(n, 2));
+                return (long)Math.Pow(2, p);
+            }
+        }
+
     }
 
 
