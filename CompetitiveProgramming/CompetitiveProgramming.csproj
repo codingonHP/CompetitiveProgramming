@@ -59,6 +59,10 @@
     <Compile Include="BytelandianGoldCoins.cs" />
     <Compile Include="CALC.cs" />
     <Compile Include="Cap01.cs" />
+    <Compile Include="CCCHEFMOVR.cs" />
+    <Compile Include="CCGCAC.cs" />
+    <Compile Include="CCPALINGAM.cs" />
+    <Compile Include="CCRAINBOWA.cs" />
     <Compile Include="ChefRout.cs" />
     <Compile Include="CHEFSIGN.cs" />
     <Compile Include="ChefSuba.cs" />

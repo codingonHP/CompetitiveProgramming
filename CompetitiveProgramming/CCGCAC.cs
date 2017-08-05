@@ -10,15 +10,17 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace CpForCompetitiveProgrammingHRDownloadFile
+namespace CpForCompetitiveProgrammingCCGCAC
 {
-    public static class HRDownloadFile
+    public static class CCGCAC
     {
         #region Main
 
+        private const long Mod = 1000000007L;
+        private const long MaxArrySize = 100000000L;
         private static ConsoleHelper Console { get; set; }
 
-        static HRDownloadFile()
+        static CCGCAC()
         {
             Console = new ConsoleHelper();
         }
@@ -53,242 +55,100 @@ namespace CpForCompetitiveProgrammingHRDownloadFile
 
 #if TESTCASES
 
-
         private static void TestCases()
         {
-            var tc = Console.NextInts(2);
-            var n = tc[0];
-            var ds = tc[1];
+            int tc = Console.NextInt(true);
 
-            var matrix = Console.NextMatrix(n, 2);
+            for (int i = 0; i < tc; i++)
+            {
+                var input = Console.NextInts(2);
+                var studentCount = input[0];
+                var companyCount = input[1];
 
-            var expected = Solve(matrix, n, ds);
-            Console.WriteLine(expected);
+                var minSalary = Console.NextInts(studentCount);
 
+                var companyMatrix = Console.NextMatrix(companyCount, 2);
+                var selectionMatrix = Console.NextMatrixString(studentCount, 1);
+
+                Solve(studentCount, companyCount, minSalary, companyMatrix, selectionMatrix);
+            }
         }
 
 #endif
-
-        #region OldSolution
-
-        public static string Solve(int[,] matrix, int n, int fileSize)
+        public static void Solve(int studentCount, int companyCount, int[] minSalary, int[,] companyMatrix, string[,] selectionMatrix)
         {
-            decimal totalDownloadLimit;
-            decimal mindownloadTime = (decimal)1e20;
-            Fraction minFraction = null;
+            double numberOfCandidatesWithJobs = 0;
+            double totalOfferings = 0;
+            double[] placementSheet = new double[companyCount];
 
-            var memory = PopulateMemory(matrix, n, out totalDownloadLimit);
-            var goFwd = totalDownloadLimit < fileSize;
-
-            if (!goFwd)
+            for (int i = 0; i < studentCount; i++)
             {
-                var time = matrix[n - 1, 0];
-                minFraction = new Fraction
+                var bestCompany = FindBestCompanyForStudentExpectation(i, minSalary, companyMatrix, companyCount, selectionMatrix);
+                if (bestCompany >= 0)
                 {
-                    Numerator = fileSize,
-                    Denominator = memory[time].BaseDownloadSpeed
-                };
-            }
-
-            for (int i = n - 1; i >= 0; i--)
-            {
-                var time = matrix[i, 0];
-
-                var downloadTimeFraction = TimeTakenToDownload(matrix, time, fileSize, memory, goFwd);
-
-                decimal downloadTime;
-                if (downloadTimeFraction.Denominator == 0)
-                {
-                    downloadTime = downloadTimeFraction.PureValue;
-                }
-                else
-                {
-                    downloadTime = downloadTimeFraction.PureValue +
-                                   downloadTimeFraction.Numerator / (decimal)downloadTimeFraction.Denominator;
-                }
-
-
-                if (downloadTime < mindownloadTime)
-                {
-                    mindownloadTime = downloadTime;
-                    minFraction = downloadTimeFraction;
+                    ++numberOfCandidatesWithJobs;
+                    totalOfferings += GetMaxCompanySalaryOffering(companyMatrix, bestCompany);
+                    placementSheet[bestCompany]++;
+                    UpdateCompanyStats(companyMatrix, bestCompany);
                 }
             }
 
-            decimal fn;
-            if (minFraction.Denominator == 0)
-            {
-                fn = minFraction.PureValue;
-            }
-            else
-            {
-                fn = minFraction.PureValue * minFraction.Denominator + minFraction.Numerator;
-            }
+            double companyWithZeroCandidates = placementSheet.Where(e => e == 0).Count();
 
-            var fd = minFraction.Denominator == 0 ? 1 : minFraction.Denominator;
-
-            var gcd = Gcd(fn, fd);
-
-            fn /= gcd;
-            fd /= gcd;
-
-            return string.Format("{0}/{1}", fn, fd);
-
+            Console.WriteLine(numberOfCandidatesWithJobs + " " + totalOfferings + " " + companyWithZeroCandidates);
         }
 
-        private static Fraction TimeTakenToDownload(int[,] matrix, int time, long leftDownload, Dictionary<long, Memory> memory, bool goFwd)
+        private static int FindBestCompanyForStudentExpectation(int studentIndex, int[] minSalary, int[,] companyMatrix, int totalCompany, string[,] selectionMatrix)
         {
-            var downloadInfo = memory[time];
-            Fraction value = new Fraction();
+            var minExpectations = minSalary[studentIndex];
+            var maxReceived = -1;
+            var companyChoosen = -1;
 
-            if (downloadInfo.Last && goFwd)
+            for (int companyIndex = 0; companyIndex < totalCompany; companyIndex++)
             {
-                return new Fraction
+                var offering = GetMaxCompanySalaryOffering(companyMatrix, companyIndex);
+                var selected = IsSelectedBy(companyIndex, studentIndex, selectionMatrix);
+                var jobsLeft = JobLeftAtCompany(companyMatrix, companyIndex);
+
+                if (!selected || jobsLeft <= 0 || offering < minExpectations)
                 {
-                    Numerator = leftDownload,
-                    Denominator = downloadInfo.BaseDownloadSpeed
-                };
+                    continue;
+                }
+
+                if (offering > maxReceived)
+                {
+                    companyChoosen = companyIndex;
+                    maxReceived = offering;
+                }
             }
 
-            var rem = leftDownload - downloadInfo.MaxDownloadSize;
-
-
-            if (rem == 0)
-            {
-                return new Fraction
-                {
-                    PureValue = downloadInfo.TimeDuration
-                };
-            }
-
-            if (rem > 0)
-            {
-                var totalTime = downloadInfo.TimeDuration;
-                var nextTime = 0;
-
-                if (goFwd)
-                {
-                    nextTime = matrix[downloadInfo.Index + 1, 0];
-                }
-                else if (downloadInfo.Index > 0)
-                {
-                    nextTime = matrix[downloadInfo.Index - 1, 0];
-                }
-                else
-                {
-                    return new Fraction { PureValue = decimal.MaxValue };
-                }
-
-                var timetaken = TimeTakenToDownload(matrix, nextTime, rem, memory, goFwd);
-
-                if (timetaken.PureValue != decimal.MaxValue)
-                {
-                    timetaken.PureValue += totalTime;
-                    value = timetaken;
-                }
-                else
-                {
-                    value = new Fraction { PureValue = decimal.MaxValue };
-                }
-            }
-            else
-            {
-                var numerator = downloadInfo.TimeDuration * leftDownload;
-                var denominator = downloadInfo.MaxDownloadSize;
-
-                var gcd = Gcd(numerator, denominator);
-                value.Numerator = numerator / gcd;
-                value.Denominator = denominator / gcd;
-            }
-
-            return value;
+            return companyChoosen;
         }
 
-        private static Dictionary<long, Memory> PopulateMemory(int[,] matrix, int n, out decimal totalDownloadLimit)
+
+        private static int GetMaxCompanySalaryOffering(int[,] companyMatrix, int companyIndex)
         {
-            var memoryDictionary = new Dictionary<long, Memory>();
-            totalDownloadLimit = 0;
-
-            for (int i = 0; i < n - 1; i++)
-            {
-                var weight = matrix[i, 1];
-                var time = matrix[i, 0];
-                var nextTime = matrix[i + 1, 0];
-
-                var memory = new Memory
-                {
-                    BaseDownloadSpeed = weight,
-                    MaxDownloadSize = (nextTime - time) * weight,
-                    Index = i,
-                    TimeDuration = nextTime - time,
-                    StartTime = time
-                };
-
-                memoryDictionary.Add(time, memory);
-                totalDownloadLimit += memory.MaxDownloadSize;
-            }
-
-            var lastMemory = new Memory
-            {
-                BaseDownloadSpeed = matrix[n - 1, 1],
-                MaxDownloadSize = matrix[n - 1, 1],
-                Index = n - 1,
-                TimeDuration = 1,
-                StartTime = matrix[n - 1, 0],
-                Last = true
-            };
-
-            memoryDictionary.Add(matrix[n - 1, 0], lastMemory);
-            totalDownloadLimit += lastMemory.MaxDownloadSize;
-
-            return memoryDictionary;
+            return companyMatrix[companyIndex, 0];
         }
 
-        private static decimal Gcd(decimal a, decimal b)
+        private static int JobLeftAtCompany(int[,] companyMatrix, int companyIndex)
         {
-            if (a == 0)
-            {
-                return b;
-            }
+            return companyMatrix[companyIndex, 1];
+        }
 
-            return Gcd(b % a, a);
+        private static void UpdateCompanyStats(int[,] companyMatrix, int companyIndex)
+        {
+            companyMatrix[companyIndex, 1] -= 1;
+        }
+
+        private static bool IsSelectedBy(int companyIndex, int studentIndex, string[,] selectionMatrix)
+        {
+            var studentResult = selectionMatrix[studentIndex, 0];
+            return studentResult[companyIndex] == '1';
         }
 
 
         #endregion
-
-
-        #endregion
-    }
-
-
-
-    public class Fraction
-    {
-        public decimal Numerator { get; set; }
-        public decimal Denominator { get; set; }
-        public decimal PureValue { get; set; }
-
-        public Fraction(decimal numerator, decimal denominator)
-        {
-            Numerator = numerator;
-            Denominator = denominator;
-        }
-
-        public Fraction()
-        {
-
-        }
-    }
-
-    public class Memory
-    {
-        public long MaxDownloadSize { get; set; }
-        public long BaseDownloadSpeed { get; set; }
-        public long Index { get; set; }
-        public long TimeDuration { get; set; }
-        public long StartTime { get; set; }
-        public bool Last { get; set; }
     }
 
 
@@ -583,6 +443,19 @@ namespace CpForCompetitiveProgrammingHRDownloadFile
             return array;
         }
 
+        public string[,] NextMatrixString(int n, int m)
+        {
+            string[,] matrix = new string[n, m];
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < m; j++)
+                {
+                    matrix[i, j] = NextLine();
+                }
+            }
+
+            return matrix;
+        }
 
         public int[,] NextMatrix(int n, int m)
         {

@@ -57,6 +57,7 @@
     <Compile Include="CHNGFUNCTest.cs" />
     <Compile Include="COMPCLUBUnitTest.cs" />
     <Compile Include="HeapTest.cs" />
+    <Compile Include="HRFileDownloadingTest.cs" />
     <Compile Include="HRGCDAndSumTest.cs" />
     <Compile Include="HRSameOccuranceTest.cs" />
     <Compile Include="IPCTRAINTest.cs" />
